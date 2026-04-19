@@ -1,0 +1,55 @@
+{
+  "style": {},
+  "nodes": [
+    {
+      "id": "n0",
+      "position": {"x": -300, "y": 0},
+      "caption": "",
+      "style": {},
+      "labels": ["Format", "Canonical"],
+      "properties": {"name": "Arrows JSON"}
+    },
+    {
+      "id": "n1",
+      "position": {"x": 0, "y": 0},
+      "caption": "",
+      "style": {},
+      "labels": ["Struct"],
+      "properties": {"name": "Artefact"}
+    },
+    {
+      "id": "n2",
+      "position": {"x": 300, "y": 0},
+      "caption": "",
+      "style": {},
+      "labels": ["Format", "Derived"],
+      "properties": {"name": "Cypher"}
+    }
+  ],
+  "relationships": [
+    {
+      "id": "r0",
+      "type": "FROM_JSON",
+      "style": {},
+      "properties": {},
+      "fromId": "n0",
+      "toId": "n1"
+    },
+    {
+      "id": "r1",
+      "type": "TO_JSON",
+      "style": {},
+      "properties": {},
+      "fromId": "n1",
+      "toId": "n0"
+    },
+    {
+      "id": "r2",
+      "type": "EXPORT",
+      "style": {},
+      "properties": {},
+      "fromId": "n1",
+      "toId": "n2"
+    }
+  ]
+}

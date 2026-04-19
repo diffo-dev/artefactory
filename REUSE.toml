@@ -1,0 +1,22 @@
+version = 1
+
+# Mix lockfiles — generated, no inline header possible
+[[annotations]]
+path = ["artefactory/mix.lock", "artefactory_kino/mix.lock"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 diffo-dev"
+SPDX-License-Identifier = "MIT"
+
+# Test fixture data — binary/data files that cannot carry inline SPDX headers
+[[annotations]]
+path = ["artefactory/test/data/**", "artefactory_kino/test/data/**"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 diffo-dev"
+SPDX-License-Identifier = "MIT"
+
+# Logos
+[[annotations]]
+path = ["logos/**"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 diffo-dev"
+SPDX-License-Identifier = "MIT"

@@ -1,0 +1,6 @@
+CREATE (n0:Format:Canonical {name: 'Arrows JSON'}),
+       (n1:Struct {name: 'Artefact'}),
+       (n2:Format:Derived {name: 'Cypher'}),
+       (n0)-[:FROM_JSON]->(n1),
+       (n1)-[:TO_JSON]->(n0),
+       (n1)-[:EXPORT]->(n2)
