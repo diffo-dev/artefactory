@@ -14,6 +14,60 @@ defmodule ArtefactTest do
     Artefact.new(graph: %Artefact.Graph{nodes: nodes, relationships: []})
   end
 
+  describe "provenance" do
+    test "new records :struct provenance with calling module" do
+      a = Artefact.new()
+      assert %{provenance: %{source: :struct, module: ArtefactTest}} = a.metadata
+    end
+
+    test "from_json records :arrows_json provenance" do
+      json = File.read!(Path.join([@fixtures, "us_two", "arrows.json"]))
+      a = Artefact.Arrows.from_json!(json)
+      assert %{provenance: %{source: :arrows_json, diagram: nil}} = a.metadata
+    end
+
+    test "from_json records diagram when provided" do
+      json = File.read!(Path.join([@fixtures, "us_two", "arrows.json"]))
+      a = Artefact.Arrows.from_json!(json, diagram: "us_two/arrows.json")
+      assert %{provenance: %{source: :arrows_json, diagram: "us_two/arrows.json"}} = a.metadata
+    end
+
+    test "compose records :composed provenance with left and right title, base_label, uuid and provenance" do
+      a1 = Artefact.new()
+      a2 = Artefact.new()
+      composed = Artefact.compose(a1, a2)
+      assert %{provenance: %{source: :composed, module: ArtefactTest,
+                             left:  %{title: left_title,  base_label: left_bl,  uuid: left_uuid,  provenance: left_prov},
+                             right: %{title: right_title, base_label: right_bl, uuid: right_uuid, provenance: right_prov}}} = composed.metadata
+      assert left_title  == a1.title
+      assert left_bl     == a1.base_label
+      assert left_uuid   == a1.uuid
+      assert right_title == a2.title
+      assert right_bl    == a2.base_label
+      assert right_uuid  == a2.uuid
+      assert left_prov   == a1.metadata.provenance
+      assert right_prov  == a2.metadata.provenance
+    end
+
+    test "harmonise records :harmonised provenance with left and right title, base_label, uuid and provenance" do
+      a1 = artefact_with([shared_node()])
+      a2 = artefact_with([shared_node()])
+      {:ok, bindings} = Artefact.Binding.find(a1, a2)
+      result = Artefact.harmonise(a1, a2, bindings)
+      assert %{provenance: %{source: :harmonised, module: ArtefactTest,
+                             left:  %{title: left_title,  base_label: left_bl,  uuid: left_uuid,  provenance: left_prov},
+                             right: %{title: right_title, base_label: right_bl, uuid: right_uuid, provenance: right_prov}}} = result.metadata
+      assert left_title  == a1.title
+      assert left_bl     == a1.base_label
+      assert left_uuid   == a1.uuid
+      assert right_title == a2.title
+      assert right_bl    == a2.base_label
+      assert right_uuid  == a2.uuid
+      assert left_prov   == a1.metadata.provenance
+      assert right_prov  == a2.metadata.provenance
+    end
+  end
+
   describe "Artefact.Arrows.from_json!/2 — us_two" do
     setup do
       json = File.read!(Path.join([@fixtures, "us_two", "arrows.json"]))

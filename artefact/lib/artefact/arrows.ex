@@ -43,6 +43,10 @@ defmodule Artefact.Arrows do
     relationships = raw |> Map.get("relationships", []) |> Enum.map(&decode_relationship/1)
     graph = %Artefact.Graph{nodes: nodes, relationships: relationships}
 
+    metadata = Keyword.get(opts, :metadata,
+      %{provenance: %{source: :arrows_json, diagram: Keyword.get(opts, :diagram)}}
+    )
+
     %Artefact{
       id: Keyword.get(opts, :id, Artefact.UUID.generate_v7()),
       uuid: Keyword.get(opts, :uuid, Map.get(raw, "uuid", Artefact.UUID.generate_v7())),
@@ -50,7 +54,7 @@ defmodule Artefact.Arrows do
       base_label: base_label,
       style: Keyword.get(opts, :style),
       graph: graph,
-      metadata: Keyword.get(opts, :metadata, %{})
+      metadata: metadata
     }
   end
 

@@ -26,15 +26,19 @@ defmodule Artefact do
   @doc """
   Create a new Artefact. Defaults `base_label` and `title` to the short name
   of the calling module. Override with `title:` or `base_label:` in attrs.
+
+  Records `:struct` provenance with the calling module.
   """
   defmacro new(attrs \\ []) do
-    caller_name = __CALLER__.module |> Module.split() |> List.last()
+    caller = __CALLER__.module
+    caller_name = caller |> Module.split() |> List.last()
     quote do
-      attrs  = unquote(attrs)
-      name   = unquote(caller_name)
-      title  = Keyword.get(attrs, :title, name)
+      attrs      = unquote(attrs)
+      name       = unquote(caller_name)
+      title      = Keyword.get(attrs, :title, name)
       base_label = Keyword.get(attrs, :base_label, name |> String.replace(~r/[^A-Za-z0-9]/, ""))
-      Artefact.build([{:title, title}, {:base_label, base_label} | Keyword.drop(attrs, [:title, :base_label])])
+      metadata   = %{provenance: %{source: :struct, module: unquote(caller)}}
+      Artefact.build([{:title, title}, {:base_label, base_label}, {:metadata, metadata} | Keyword.drop(attrs, [:title, :base_label, :metadata])])
     end
   end
 
@@ -44,12 +48,26 @@ defmodule Artefact do
 
   `base_label` defaults to the portmanteau of both artefacts' base_labels.
   Override with `base_label:` or `title:` in opts.
+
+  Records `:composed` provenance with the calling module and the metadata
+  of both source artefacts.
   """
-  def compose(%__MODULE__{} = a1, %__MODULE__{} = a2, opts \\ []) do
+  defmacro compose(a1, a2, opts \\ []) do
+    caller = __CALLER__.module
+    quote do
+      Artefact.do_compose(unquote(a1), unquote(a2), unquote(opts), unquote(caller))
+    end
+  end
+
+  @doc false
+  def do_compose(%__MODULE__{} = a1, %__MODULE__{} = a2, opts, caller) do
     base_label = Keyword.get(opts, :base_label, portmanteau(a1.base_label, a2.base_label))
     title      = Keyword.get(opts, :title, base_label)
-    graph = merge_graphs(a1.graph, a2.graph)
-    build([{:title, title}, {:base_label, base_label}, {:graph, graph}])
+    graph      = merge_graphs(a1.graph, a2.graph)
+    metadata   = %{provenance: %{source: :composed, module: caller,
+                                left:  %{title: a1.title, base_label: a1.base_label, uuid: a1.uuid, provenance: Map.get(a1.metadata, :provenance)},
+                                right: %{title: a2.title, base_label: a2.base_label, uuid: a2.uuid, provenance: Map.get(a2.metadata, :provenance)}}}
+    build([{:title, title}, {:base_label, base_label}, {:graph, graph}, {:metadata, metadata}])
   end
 
   @doc """
@@ -58,8 +76,19 @@ defmodule Artefact do
   Bound nodes are merged: lower uuid wins for identity and properties,
   labels are unioned. All relationships are preserved and remapped.
   Returns a new artefact with a portmanteau base_label unless overridden.
+
+  Records `:harmonised` provenance with the calling module and the metadata
+  of both source artefacts.
   """
-  def harmonise(%__MODULE__{} = a1, %__MODULE__{} = a2, bindings, opts \\ []) do
+  defmacro harmonise(a1, a2, bindings, opts \\ []) do
+    caller = __CALLER__.module
+    quote do
+      Artefact.do_harmonise(unquote(a1), unquote(a2), unquote(bindings), unquote(opts), unquote(caller))
+    end
+  end
+
+  @doc false
+  def do_harmonise(%__MODULE__{} = a1, %__MODULE__{} = a2, bindings, opts, caller) do
     base_label = Keyword.get(opts, :base_label, portmanteau(a1.base_label, a2.base_label))
     title      = Keyword.get(opts, :title, base_label)
 
@@ -113,7 +142,10 @@ defmodule Artefact do
       relationships: relationships
     }
 
-    build([{:title, title}, {:base_label, base_label}, {:graph, graph}])
+    metadata = %{provenance: %{source: :harmonised, module: caller,
+                               left:  %{title: a1.title, base_label: a1.base_label, uuid: a1.uuid, provenance: Map.get(a1.metadata, :provenance)},
+                               right: %{title: a2.title, base_label: a2.base_label, uuid: a2.uuid, provenance: Map.get(a2.metadata, :provenance)}}}
+    build([{:title, title}, {:base_label, base_label}, {:graph, graph}, {:metadata, metadata}])
   end
 
   @doc false
