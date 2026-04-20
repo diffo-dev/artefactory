@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 diffo-dev
 # SPDX-License-Identifier: MIT
 
-defmodule Artefactory.Node do
+defmodule Artefact.Node do
   @moduledoc false
   defstruct [:id, :position, labels: [], properties: %{}]
 
@@ -13,7 +13,7 @@ defmodule Artefactory.Node do
         }
 end
 
-defmodule Artefactory.Relationship do
+defmodule Artefact.Relationship do
   @moduledoc false
   defstruct [:id, :type, :from_id, :to_id, properties: %{}]
 
@@ -26,12 +26,12 @@ defmodule Artefactory.Relationship do
         }
 end
 
-defmodule Artefactory.Graph do
+defmodule Artefact.Graph do
   @moduledoc false
   defstruct nodes: [], relationships: []
 
   @type t :: %__MODULE__{
-          nodes: [Artefactory.Node.t()],
-          relationships: [Artefactory.Relationship.t()]
+          nodes: [Artefact.Node.t()],
+          relationships: [Artefact.Relationship.t()]
         }
 end

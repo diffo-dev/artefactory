@@ -1,9 +1,9 @@
 # SPDX-FileCopyrightText: 2026 diffo-dev
 # SPDX-License-Identifier: MIT
 
-defmodule Artefactory.Cypher do
+defmodule Artefact.Cypher do
   @moduledoc """
-  Derives a Cypher CREATE fragment from an `%Artefactory{}`.
+  Derives a Cypher CREATE fragment from an `%Artefact{}`.
 
   Lossy: position and style are not represented in Cypher.
   """
@@ -15,7 +15,7 @@ defmodule Artefactory.Cypher do
   ensuring nodes shared across multiple relationships are created once.
   Relationships follow, referencing those variables.
   """
-  def export(%Artefactory{graph: graph}) do
+  def export(%Artefact{graph: graph}) do
     node_patterns = Enum.map(graph.nodes, &node_pattern/1)
 
     rel_patterns =
@@ -26,7 +26,7 @@ defmodule Artefactory.Cypher do
     "CREATE " <> Enum.join(node_patterns ++ rel_patterns, ",\n       ")
   end
 
-  defp node_pattern(%Artefactory.Node{id: id, labels: labels, properties: props}) do
+  defp node_pattern(%Artefact.Node{id: id, labels: labels, properties: props}) do
     label_str = Enum.map_join(labels, "", &":#{&1}")
     prop_str = props_to_cypher(props)
 
@@ -36,7 +36,7 @@ defmodule Artefactory.Cypher do
     end
   end
 
-  defp rel_pattern(%Artefactory.Relationship{type: type, properties: props}) do
+  defp rel_pattern(%Artefact.Relationship{type: type, properties: props}) do
     prop_str = props_to_cypher(props)
 
     case prop_str do

@@ -1,9 +1,9 @@
 # SPDX-FileCopyrightText: 2026 diffo-dev
 # SPDX-License-Identifier: MIT
 
-defmodule ArtefactoryKino do
+defmodule ArtefactKino do
   @moduledoc """
-  Livebook Kino widget for rendering `%Artefactory{}` knowledge graphs.
+  Livebook Kino widget for rendering `%Artefact{}` knowledge graphs.
 
   Renders an interactive vis-network graph (left panel) alongside
   the derived Cypher fragment (right panel).
@@ -15,7 +15,7 @@ defmodule ArtefactoryKino do
 
   ## Styles
 
-  The `:style` field on `%Artefactory{}` controls rendering:
+  The `:style` field on `%Artefact{}` controls rendering:
   - `:sand_talk`      — dark sand background, ochre nodes and edges
   - `:arrows_default` — faithful to arrows.app colours
   - `nil`             — defaults to `:arrows_default`

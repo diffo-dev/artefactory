@@ -1,16 +1,16 @@
 # SPDX-FileCopyrightText: 2026 diffo-dev
 # SPDX-License-Identifier: MIT
 
-defmodule Artefactory.Arrows do
+defmodule Artefact.Arrows do
   @moduledoc """
-  Lossless round-trip between `%Artefactory{}` and Arrows JSON.
+  Lossless round-trip between `%Artefact{}` and Arrows JSON.
 
   Fields dropped on import (render concerns only):
   - `caption` on nodes — no Cypher equivalent
   - `style` at all levels — renderer's responsibility
   """
 
-  @doc "Parse Arrows JSON string into an `%Artefactory{}`. Returns `{:ok, artefact}` or `{:error, reason}`."
+  @doc "Parse Arrows JSON string into an `%Artefact{}`. Returns `{:ok, artefact}` or `{:error, reason}`."
   def from_json(json, opts \\ []) do
     with {:ok, raw} <- Jason.decode(json) do
       {:ok, decode(raw, opts)}
@@ -22,8 +22,8 @@ defmodule Artefactory.Arrows do
     json |> Jason.decode!() |> decode(opts)
   end
 
-  @doc "Encode an `%Artefactory{}` to Arrows JSON string."
-  def to_json(%Artefactory{} = artefact) do
+  @doc "Encode an `%Artefact{}` to Arrows JSON string."
+  def to_json(%Artefact{} = artefact) do
     artefact |> encode() |> Jason.encode!()
   end
 
@@ -33,9 +33,9 @@ defmodule Artefactory.Arrows do
     nodes = raw |> Map.get("nodes", []) |> Enum.map(&decode_node/1)
     relationships = raw |> Map.get("relationships", []) |> Enum.map(&decode_relationship/1)
 
-    graph = %Artefactory.Graph{nodes: nodes, relationships: relationships}
+    graph = %Artefact.Graph{nodes: nodes, relationships: relationships}
 
-    %Artefactory{
+    %Artefact{
       id: Keyword.get(opts, :id, generate_id()),
       title: Keyword.get(opts, :title),
       style: Keyword.get(opts, :style),
@@ -45,7 +45,7 @@ defmodule Artefactory.Arrows do
   end
 
   defp decode_node(raw) do
-    %Artefactory.Node{
+    %Artefact.Node{
       id: raw["id"],
       labels: Map.get(raw, "labels", []),
       properties: Map.get(raw, "properties", %{}),
@@ -57,7 +57,7 @@ defmodule Artefactory.Arrows do
   defp decode_position(%{"x" => x, "y" => y}), do: %{x: x, y: y}
 
   defp decode_relationship(raw) do
-    %Artefactory.Relationship{
+    %Artefact.Relationship{
       id: raw["id"],
       type: raw["type"],
       from_id: raw["fromId"],
@@ -68,7 +68,7 @@ defmodule Artefactory.Arrows do
 
   # -- encode --
 
-  defp encode(%Artefactory{graph: graph}) do
+  defp encode(%Artefact{graph: graph}) do
     %{
       "style" => %{},
       "nodes" => Enum.map(graph.nodes, &encode_node/1),
@@ -76,7 +76,7 @@ defmodule Artefactory.Arrows do
     }
   end
 
-  defp encode_node(%Artefactory.Node{} = node) do
+  defp encode_node(%Artefact.Node{} = node) do
     base = %{
       "id" => node.id,
       "labels" => node.labels,
@@ -91,7 +91,7 @@ defmodule Artefactory.Arrows do
     end
   end
 
-  defp encode_relationship(%Artefactory.Relationship{} = rel) do
+  defp encode_relationship(%Artefact.Relationship{} = rel) do
     %{
       "id" => rel.id,
       "type" => rel.type,

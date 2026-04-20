@@ -1,0 +1,7 @@
+CREATE (n0:LexicalCategory:Noun {name: 'Noun'}),
+       (n1:LexicalCategory:Verb {name: 'Verb'}),
+       (n2:LexicalCategory:Adjective {name: 'Adjective'}),
+       (n3:LexicalCategory:Adverb {name: 'Adverb'}),
+       (n2)-[:DESCRIBES]->(n0),
+       (n3)-[:INTENSIFIES]->(n1),
+       (n3)-[:QUALIFIES]->(n2)

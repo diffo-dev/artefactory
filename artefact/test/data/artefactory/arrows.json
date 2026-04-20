@@ -1,0 +1,119 @@
+{
+  "style": {},
+  "nodes": [
+    {
+      "id": "n0",
+      "position": {"x": 0, "y": -200},
+      "caption": "",
+      "style": {},
+      "labels": ["Noun"],
+      "properties": {"name": "Artefact", "meaning": "An insightful knowledge fragment"}
+    },
+    {
+      "id": "n1",
+      "position": {"x": -300, "y": 0},
+      "caption": "",
+      "style": {},
+      "labels": ["Noun"],
+      "properties": {"name": "Artefacture", "meaning": "The whole practice"}
+    },
+    {
+      "id": "n2",
+      "position": {"x": 300, "y": 0},
+      "caption": "",
+      "style": {},
+      "labels": ["Noun"],
+      "properties": {"name": "Artefactory", "meaning": "The universe of Artefact-related stuff"}
+    },
+    {
+      "id": "n3",
+      "position": {"x": 0, "y": 200},
+      "caption": "",
+      "style": {},
+      "labels": ["Verb"],
+      "properties": {"name": "Artefacting", "meaning": "Doing stuff with Artefacts"}
+    },
+    {
+      "id": "n4",
+      "position": {"x": -300, "y": 200},
+      "caption": "",
+      "style": {},
+      "labels": ["Adjective"],
+      "properties": {"name": "Artefactable", "meaning": "Implements the Artefactable protocol"}
+    },
+    {
+      "id": "n5",
+      "position": {"x": 300, "y": 200},
+      "caption": "",
+      "style": {},
+      "labels": ["Adverb"],
+      "properties": {"name": "Artefactually", "meaning": "As a matter of artefact"}
+    },
+    {
+      "id": "n6",
+      "position": {"x": -150, "y": 300},
+      "caption": "",
+      "style": {},
+      "labels": ["Adjective"],
+      "properties": {"name": "Artefactive", "meaning": "Having artefact properties"}
+    }
+  ],
+  "relationships": [
+    {
+      "id": "r0",
+      "type": "PRODUCES",
+      "style": {},
+      "properties": {},
+      "fromId": "n3",
+      "toId": "n0"
+    },
+    {
+      "id": "r1",
+      "type": "COMPRISES",
+      "style": {},
+      "properties": {},
+      "fromId": "n1",
+      "toId": "n3"
+    },
+    {
+      "id": "r2",
+      "type": "CONTAINS",
+      "style": {},
+      "properties": {},
+      "fromId": "n2",
+      "toId": "n1"
+    },
+    {
+      "id": "r3",
+      "type": "DESCRIBES",
+      "style": {},
+      "properties": {},
+      "fromId": "n4",
+      "toId": "n0"
+    },
+    {
+      "id": "r4",
+      "type": "QUALIFIES",
+      "style": {},
+      "properties": {},
+      "fromId": "n5",
+      "toId": "n3"
+    },
+    {
+      "id": "r5",
+      "type": "HOLDS",
+      "style": {},
+      "properties": {},
+      "fromId": "n2",
+      "toId": "n0"
+    },
+    {
+      "id": "r6",
+      "type": "DESCRIBES",
+      "style": {},
+      "properties": {},
+      "fromId": "n6",
+      "toId": "n0"
+    }
+  ]
+}

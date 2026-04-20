@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 diffo-dev
 # SPDX-License-Identifier: MIT
 
-defmodule ArtefactoryKino.MixProject do
+defmodule ArtefactKino.MixProject do
   @moduledoc false
   use Mix.Project
 
@@ -10,13 +10,13 @@ defmodule ArtefactoryKino.MixProject do
 
   def project do
     [
-      app: :artefactory_kino,
+      app: :artefact_kino,
       version: @version,
       elixir: "~> 1.16",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),
-      name: "ArtefactoryKino",
+      name: "ArtefactKino",
       description: "Livebook Kino widget for rendering Artefactory knowledge graphs via vis-network",
       source_url: @github_url,
       docs: docs()
@@ -29,7 +29,7 @@ defmodule ArtefactoryKino.MixProject do
 
   defp deps do
     [
-      {:artefactory, "~> 0.1", path: "../artefactory"},
+      {:artefact, "~> 0.1", path: "../artefact"},
       {:kino, "~> 0.14"},
       {:ex_doc, "~> 0.37", only: [:dev, :test], runtime: false}
     ]
@@ -45,7 +45,7 @@ defmodule ArtefactoryKino.MixProject do
 
   defp docs do
     [
-      main: "ArtefactoryKino",
+      main: "ArtefactKino",
       source_url: @github_url,
       source_ref: "v#{@version}"
     ]

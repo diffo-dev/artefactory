@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 diffo-dev
 # SPDX-License-Identifier: MIT
 
-defmodule Artefactory.MixProject do
+defmodule Artefact.MixProject do
   @moduledoc false
   use Mix.Project
 
@@ -10,13 +10,13 @@ defmodule Artefactory.MixProject do
 
   def project do
     [
-      app: :artefactory,
+      app: :artefact,
       version: @version,
       elixir: "~> 1.16",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),
-      name: "Artefactory",
+      name: "Artefact",
       description: "Arrows JSON ↔ Cypher — knowledge graph fragments made in relationship",
       source_url: @github_url,
       docs: docs()
@@ -44,7 +44,7 @@ defmodule Artefactory.MixProject do
 
   defp docs do
     [
-      main: "Artefactory",
+      main: "Artefact",
       source_url: @github_url,
       source_ref: "v#{@version}"
     ]

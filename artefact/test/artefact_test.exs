@@ -1,20 +1,20 @@
 # SPDX-FileCopyrightText: 2026 diffo-dev
 # SPDX-License-Identifier: MIT
 
-defmodule ArtefactoryTest do
+defmodule ArtefactTest do
   use ExUnit.Case, async: true
 
   @fixtures Path.join(__DIR__, "data")
 
-  describe "Artefactory.Arrows.from_json!/2 — us_two" do
+  describe "Artefact.Arrows.from_json!/2 — us_two" do
     setup do
       json = File.read!(Path.join([@fixtures, "us_two", "arrows.json"]))
-      artefact = Artefactory.Arrows.from_json!(json, id: "us-two-test")
+      artefact = Artefact.Arrows.from_json!(json, id: "us-two-test")
       %{artefact: artefact}
     end
 
     test "returns an Artefact struct", %{artefact: a} do
-      assert %Artefactory{} = a
+      assert %Artefact{} = a
       assert a.id == "us-two-test"
     end
 
@@ -63,11 +63,11 @@ defmodule ArtefactoryTest do
     end
   end
 
-  describe "Artefactory.Arrows round-trip" do
+  describe "Artefact.Arrows round-trip" do
     test "to_json/from_json! preserves nodes and relationships" do
       json = File.read!(Path.join([@fixtures, "us_two", "arrows.json"]))
-      original = Artefactory.Arrows.from_json!(json, id: "rt-test")
-      round_tripped = original |> Artefactory.Arrows.to_json() |> Artefactory.Arrows.from_json!(id: "rt-test")
+      original = Artefact.Arrows.from_json!(json, id: "rt-test")
+      round_tripped = original |> Artefact.Arrows.to_json() |> Artefact.Arrows.from_json!(id: "rt-test")
 
       assert length(round_tripped.graph.nodes) == length(original.graph.nodes)
       assert length(round_tripped.graph.relationships) == length(original.graph.relationships)
@@ -84,20 +84,20 @@ defmodule ArtefactoryTest do
     end
   end
 
-  describe "Artefactory.Cypher.export/1 — us_two" do
+  describe "Artefact.Cypher.export/1 — us_two" do
     test "matches fixture" do
       json = File.read!(Path.join([@fixtures, "us_two", "arrows.json"]))
       expected = File.read!(Path.join([@fixtures, "us_two", "create_cypher.txt"])) |> String.trim()
 
-      artefact = Artefactory.Arrows.from_json!(json)
-      assert Artefactory.Cypher.export(artefact) == expected
+      artefact = Artefact.Arrows.from_json!(json)
+      assert Artefact.Cypher.export(artefact) == expected
     end
   end
 
   describe "artefact self-description" do
     setup do
       json = File.read!(Path.join([@fixtures, "artefact", "arrows.json"]))
-      %{artefact: Artefactory.Arrows.from_json!(json, id: "artefact-self")}
+      %{artefact: Artefact.Arrows.from_json!(json, id: "artefact-self")}
     end
 
     test "three nodes — the forms", %{artefact: a} do
@@ -115,7 +115,7 @@ defmodule ArtefactoryTest do
 
     test "Cypher export matches fixture", %{artefact: a} do
       expected = File.read!(Path.join([@fixtures, "artefact", "create_cypher.txt"])) |> String.trim()
-      assert Artefactory.Cypher.export(a) == expected
+      assert Artefact.Cypher.export(a) == expected
     end
   end
 end

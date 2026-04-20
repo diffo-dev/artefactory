@@ -1,0 +1,12 @@
+CREATE (n0:Noun {meaning: 'An insightful knowledge fragment', name: 'Artefact'}),
+       (n1:Noun {meaning: 'The whole practice', name: 'Artefacture'}),
+       (n2:Noun {meaning: 'The universe of Artefact-related stuff', name: 'Artefactory'}),
+       (n3:Verb {meaning: 'Doing stuff with Artefacts', name: 'Artefacting'}),
+       (n4:Adjective {meaning: 'Implements the Artefactable protocol', name: 'Artefactable'}),
+       (n5:Adverb {meaning: 'As a matter of artefact', name: 'Artefactually'}),
+       (n3)-[:PRODUCES]->(n0),
+       (n1)-[:COMPRISES]->(n3),
+       (n2)-[:CONTAINS]->(n1),
+       (n4)-[:DESCRIBES]->(n0),
+       (n5)-[:QUALIFIES]->(n3),
+       (n2)-[:HOLDS]->(n0)

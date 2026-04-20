@@ -1,0 +1,63 @@
+{
+  "style": {},
+  "nodes": [
+    {
+      "id": "n0",
+      "position": {"x": -200, "y": 100},
+      "caption": "",
+      "style": {},
+      "labels": ["LexicalCategory", "Noun"],
+      "properties": {"name": "Noun"}
+    },
+    {
+      "id": "n1",
+      "position": {"x": 200, "y": 100},
+      "caption": "",
+      "style": {},
+      "labels": ["LexicalCategory", "Verb"],
+      "properties": {"name": "Verb"}
+    },
+    {
+      "id": "n2",
+      "position": {"x": -200, "y": -100},
+      "caption": "",
+      "style": {},
+      "labels": ["LexicalCategory", "Adjective"],
+      "properties": {"name": "Adjective"}
+    },
+    {
+      "id": "n3",
+      "position": {"x": 200, "y": -100},
+      "caption": "",
+      "style": {},
+      "labels": ["LexicalCategory", "Adverb"],
+      "properties": {"name": "Adverb"}
+    }
+  ],
+  "relationships": [
+    {
+      "id": "r0",
+      "type": "DESCRIBES",
+      "style": {},
+      "properties": {},
+      "fromId": "n2",
+      "toId": "n0"
+    },
+    {
+      "id": "r1",
+      "type": "INTENSIFIES",
+      "style": {},
+      "properties": {},
+      "fromId": "n3",
+      "toId": "n1"
+    },
+    {
+      "id": "r2",
+      "type": "QUALIFIES",
+      "style": {},
+      "properties": {},
+      "fromId": "n3",
+      "toId": "n2"
+    }
+  ]
+}

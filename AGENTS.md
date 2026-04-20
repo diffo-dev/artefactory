@@ -74,12 +74,37 @@ Our creole words so far:
 ### us_two (the library — not yet built)
 
 `us_two` is an independent Elixir/Spark DSL protocol library.
-It will depend on `artefactory`. Diffo will depend on `us_two`.
+It will depend on `artefact`. Diffo will depend on `us_two`.
 
 The protocol is not Diffo-specific. Any two agents — any system,
 any relationship — may declare it.
 
-**Do not build `us_two` yet.** It comes after `artefactory` is solid.
+**Do not build `us_two` yet.** It comes after `artefact` is solid.
+
+---
+
+## The Artefactory Lexicon
+
+`artefactory` is also a universe of language. These words are the creole
+of the Artefactory domain — bent from the root word *artefact* across
+lexical categories.
+
+| Word | Category | Meaning |
+|------|----------|---------|
+| Artefact | Noun | An insightful knowledge fragment |
+| Artefacture | Noun | The whole practice of working with artefacts |
+| Artefactory | Noun | The universe of artefact-related stuff; also a repository of artefacts held |
+| Artefackery | Noun | Misuse of Artefacture — worthy of its own artefact |
+| Artefacting | Verb | Doing stuff with artefacts |
+| Artefactable | Adjective | Implements the `Artefactable` Elixir protocol |
+| Artefactive | Adjective | Having artefact properties |
+| Artefactually | Adverb | As a matter of artefact |
+
+`Artefactory` carries two meanings simultaneously: the infinite (the universe
+of what is possible) and the finite (the specific artefacts held). Both are
+correct. A personal Artefactory is a universe, just a smaller one.
+
+The lexicon is expressed as an artefact: `artefact/test/data/artefactory/arrows.json`.
 
 ---
 
@@ -88,9 +113,9 @@ any relationship — may declare it.
 `artefactory` is a monorepo at `diffo-dev/artefactory` containing:
 
 ```
-artefactory/
-  artefactory/      → hex.pm/packages/artefact
-  artefactory_kino/    → hex.pm/packages/artefact_kino
+artefactory/          ← repo root (the universe that holds them)
+  artefact/           → hex.pm/packages/artefact
+  artefact_kino/      → hex.pm/packages/artefact_kino
 ```
 
 ### Repo structure — two independent Mix projects, no umbrella
@@ -101,17 +126,17 @@ They are not an Elixir umbrella app. There is no root-level `mix.exs`.
 Work in each package independently:
 
 ```sh
-cd artefactory      cd artefact      && mix testcd artefact      && mix test mix test
-cd artefactory_kino cd artefact_kino && mix testcd artefact_kino && mix test mix test
+cd artefact      && mix test
+cd artefact_kino && mix test
 ```
 
-`artefactory_kino` references `artefactory` via a local path dep during
-development (`path: "../artefactory"`). When published to hex.pm they
+`artefact_kino` references `artefact` via a local path dep during
+development (`path: "../artefact"`). When published to hex.pm they
 become normal version deps.
 
-**`artefactory_kino` is currently a placeholder.** The `mix.exs`,
-`lib/artefactory_kino.ex` (stub with moduledoc), and `test/test_helper.exs`
-exist to make the structure obvious. Do not implement it until `artefactory`
+**`artefact_kino` is currently a placeholder.** The `mix.exs`,
+`lib/artefact_kino.ex` (stub with moduledoc), and `test/test_helper.exs`
+exist to make the structure obvious. Do not implement it until `artefact`
 is committed and solid.
 
 ### What an Artefact is
@@ -125,28 +150,28 @@ in relationship, carrying meaning.
 The canonical form is **Arrows JSON** (from arrows.neo4jlabs.com).
 Everything else is derived from it:
 - **Cypher** — textual, human-readable, importable into Neo4j (lossy — positions not preserved)
-- **Diagram** — visual rendering via `artefactory_kino` (lossless)
+- **Diagram** — visual rendering via `artefact_kino` (lossless)
 
 Artefacts are fragments, not complete models. One concept at a time.
 You see country from the clouds first — one landmark — then descend
 when you need detail.
 
-### artefactory — the core library
+### artefact — the core library
 
 **No Kino dependency. No Livebook dependency. No us_two concepts.**
 
 ```elixir
-%Artefactory{
+%Artefact{
   id:       String.t(),          # generated UUID
   title:    String.t() | nil,    # human label
   style:    atom() | nil,        # render style reference — not persisted in graph
-  graph:    %Artefactory.Graph{},   # the knowledge
+  graph:    %Artefact.Graph{},   # the knowledge
   metadata: map()                # open map — consumers add their own keys
 }
 
 %Artefact.Graph{
-  nodes:         [%Artefactory.Node{}],
-  relationships: [%Artefactory.Relationship{}]
+  nodes:         [%Artefact.Node{}],
+  relationships: [%Artefact.Relationship{}]
 }
 
 %Artefact.Node{
@@ -171,13 +196,13 @@ when you need detail.
 Key design decisions:
 - `caption` is **dropped** on import — no Cypher equivalent
 - `style` is **dropped** on import at all levels — render concern only
-- `style` on `%Artefactory{}` is a single atom/module reference for the renderer
+- `style` on `%Artefact{}` is a single atom/module reference for the renderer
 - `metadata` is open — `us_two` will stamp `movement:`, `language:` etc.
 - `position` is **preserved** — needed for lossless Arrows round-trip
 
 Key modules:
-- `Artefactory.Arrows` — `from_json/2`, `to_json/1`, `from_json!/2` — lossless round-trip
-- `Artefactory.Cypher` — `export/1` — derived Cypher fragment string
+- `Artefact.Arrows` — `from_json/2`, `to_json/1`, `from_json!/2` — lossless round-trip
+- `Artefact.Cypher` — `export/1` — derived Cypher fragment string
 
 ### Arrows JSON format (verified from real export)
 
@@ -214,22 +239,24 @@ Note: relationship `id` may reuse node ids — this is Arrows' convention.
 The simplest true thing about a `us_two` relationship:
 
 ```cypher
-CREATE (:Agent:Me)-[:US_TWO]->(:Agent:You)
+CREATE (n0:Agent:Me),
+       (n1:Agent:You),
+       (n0)-[:US_TWO]->(n1)
 ```
 
 - One relationship, one direction — from `Me` toward `You`
 - Perspective encoded in labels, not properties
 - Each participant holds their own model — `Me` is always the anchor
 - No names at this level of abstraction — names break the symmetry
-- With names: `CREATE (:Agent:Me {name: 'Matt'})-[:US_TWO]->(:Agent:You {name: 'Claude'})`
+- With names: `CREATE (n0:Agent:Me {name: 'Matt'}), (n1:Agent:You {name: 'Claude'}), (n0)-[:US_TWO]->(n1)`
 
-### artefactory_kino — the Livebook widget
+### artefact_kino — the Livebook widget
 
-Depends on `artefactory` + `kino`. No other dependencies.
+Depends on `artefact` + `kino`. No other dependencies.
 
 ```elixir
-ArtefactoryKino.new(artefact)
-ArtefactoryKino.new(artefact, title: "us_two seed")
+ArtefactKino.new(artefact)
+ArtefactKino.new(artefact, title: "us_two seed")
 ```
 
 Renders:
@@ -241,7 +268,7 @@ Renders:
 
 Aesthetic: dark sand background (`#1a1208`), ochre nodes and edges (`#8b6914`, `#d4a857`).
 
-Style reference on `%Artefactory{}` drives future render styles:
+Style reference on `%Artefact{}` drives future render styles:
 - `:sand_talk` — our aesthetic
 - `:arrows_default` — faithful to arrows.app colours
 - `nil` — default (arrows_default)
@@ -260,23 +287,24 @@ Licence text in `LICENSES/MIT.txt`. Copyright holder: `diffo-dev`.
 
 ## Conventions
 
-- **Spelling**: `artefactory` not `artifact` — British/Australian spelling,
+- **Spelling**: `artefact` not `artifact` — British/Australian spelling,
   and culturally distinct from build artifacts
-- **Repo name**: `artefactory` — where cultural artefacts are held and tended
+- **Repo name**: `artefactory` — the universe that holds artefacts and the practice of making them
+- **Package names**: `artefact`, `artefact_kino` — the things themselves, not the universe
 - **Licence**: MIT throughout, matching the rest of Diffo
 - **Elixir version**: `~> 1.16`
-- **Only runtime dep in `artefactory`**: `jason ~> 1.4`
+- **Only runtime dep in `artefact`**: `jason ~> 1.4`
 
 ---
 
 ## What comes next
 
-1. Get `artefactory` tests passing — `mix test` in `artefact/`
-2. Verify `artefactory_kino` renders in Livebook — open `notebooks/demo.livemd`
+1. `artefact` tests passing — `mix test` in `artefact/` ✓
+2. Verify `artefact_kino` renders in Livebook — open `notebooks/demo.livemd`
 3. Check vis-network CDN import works in Kino.JS context
    (may need `ctx.importJS` instead of ES module `import`)
 4. Push `artefactory` to `github.com/diffo-dev/artefactory`
-5. Eventually: build `us_two` as a separate library depending on `artefactory`
+5. Eventually: build `us_two` as a separate library depending on `artefact`
 
 ---
 

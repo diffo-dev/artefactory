@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 diffo-dev
 # SPDX-License-Identifier: MIT
 
-defmodule Artefactory do
+defmodule Artefact do
   @moduledoc """
   A knowledge graph fragment — a small, self-contained piece of knowledge
   expressed as a property graph.
@@ -9,17 +9,17 @@ defmodule Artefactory do
   The canonical form is Arrows JSON. Everything else is derived from it.
   """
 
-  defstruct [:id, :title, :style, metadata: %{}, graph: %Artefactory.Graph{}]
+  defstruct [:id, :title, :style, metadata: %{}, graph: %Artefact.Graph{}]
 
   @type t :: %__MODULE__{
           id: String.t(),
           title: String.t() | nil,
           style: atom() | nil,
-          graph: Artefactory.Graph.t(),
+          graph: Artefact.Graph.t(),
           metadata: map()
         }
 
-  @doc "Create a new Artefactory with a generated UUID."
+  @doc "Create a new Artefact with a generated UUID."
   def new(attrs \\ []) do
     struct!(__MODULE__, [{:id, generate_id()} | attrs])
   end
