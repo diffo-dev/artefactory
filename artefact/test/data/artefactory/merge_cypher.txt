@@ -1,23 +1,23 @@
-MERGE (n0 {uuid: '019da897-f2e1-726e-b5ed-695ea238a6b9'})
-SET n0:Noun
+MERGE (n0 {uuid: '019da897-f2e0-74b2-ab91-4d68115d4f71'})
+SET n0:Noun:Artefactory
 SET n0 += {meaning: 'An insightful knowledge fragment', name: 'Artefact'}
 MERGE (n1 {uuid: '019da897-f2e1-7ef9-b3db-d86a561e31dc'})
-SET n1:Noun
+SET n1:Noun:Artefactory
 SET n1 += {meaning: 'The whole practice', name: 'Artefacture'}
 MERGE (n2 {uuid: '019da897-f2e1-783c-a0ab-b6233bc27407'})
-SET n2:Noun
+SET n2:Noun:Artefactory
 SET n2 += {meaning: 'A universe of Artefact-related stuff', name: 'Artefactory'}
 MERGE (n3 {uuid: '019da897-f2e1-7c31-b3a2-15b71835cfb4'})
-SET n3:Verb
+SET n3:Verb:Artefactory
 SET n3 += {meaning: 'Doing stuff with Artefacts', name: 'Artefacting'}
 MERGE (n4 {uuid: '019da897-f2e1-78a3-ab29-3587b7da6b8b'})
-SET n4:Adjective
+SET n4:Adjective:Artefactory
 SET n4 += {meaning: 'Implements the Artefactable protocol', name: 'Artefactable'}
 MERGE (n5 {uuid: '019da897-f2e1-77cc-a598-cb4e780c620a'})
-SET n5:Adverb
+SET n5:Adverb:Artefactory
 SET n5 += {meaning: 'As a matter of artefact', name: 'Artefactually'}
 MERGE (n6 {uuid: '019da897-f2e1-77c3-b156-8cd3335089c3'})
-SET n6:Adjective
+SET n6:Adjective:Artefactory
 SET n6 += {meaning: 'Having artefact properties', name: 'Artefactive'}
 MERGE (n3)-[:PRODUCES]->(n0)
 MERGE (n1)-[:COMPRISES]->(n3)

@@ -1,7 +1,7 @@
 MERGE (n0 {uuid: '019da897-f2de-77ca-b5a4-40f0c3730943'})
-SET n0:Agent:Me
+SET n0:Agent:Me:UsTwo
 SET n0 += {name: 'Matt'}
 MERGE (n1 {uuid: '019da897-f2de-768c-94e2-3005f2431f37'})
-SET n1:Agent:You
+SET n1:Agent:You:UsTwo
 SET n1 += {name: 'Claude'}
 MERGE (n0)-[:US_TWO]->(n1)

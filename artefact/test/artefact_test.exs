@@ -3,8 +3,16 @@
 
 defmodule ArtefactTest do
   use ExUnit.Case, async: true
+  require Artefact
 
   @fixtures Path.join(__DIR__, "data")
+
+  defp shared_node, do: %Artefact.Node{id: "n0", uuid: "019d0000-0000-7000-8000-000000000000", labels: ["Shared"], properties: %{}}
+  defp other_node(uuid), do: %Artefact.Node{id: "n1", uuid: uuid, labels: ["Other"], properties: %{}}
+
+  defp artefact_with(nodes) do
+    Artefact.new(graph: %Artefact.Graph{nodes: nodes, relationships: []})
+  end
 
   describe "Artefact.Arrows.from_json!/2 — us_two" do
     setup do
@@ -95,6 +103,43 @@ defmodule ArtefactTest do
         assert rt_node.position == orig_node.position
         assert rt_node.uuid == orig_node.uuid
       end)
+    end
+  end
+
+  describe "Artefact.Binding.find/3" do
+    test "finds shared uuid automatically" do
+      a1 = artefact_with([shared_node(), other_node("019d0000-0000-7000-8000-000000000001")])
+      a2 = artefact_with([shared_node(), other_node("019d0000-0000-7000-8000-000000000002")])
+
+      assert {:ok, [%Artefact.Binding{uuid_a: uuid, uuid_b: uuid}]} = Artefact.Binding.find(a1, a2)
+      assert uuid == shared_node().uuid
+    end
+
+    test "returns no_match when no shared nodes" do
+      a1 = artefact_with([other_node("019d0000-0000-7000-8000-000000000001")])
+      a2 = artefact_with([other_node("019d0000-0000-7000-8000-000000000002")])
+
+      assert {:error, :no_match} = Artefact.Binding.find(a1, a2)
+    end
+
+    test "inject adds explicit bindings between different uuids" do
+      uuid_a = "019d0000-0000-7000-8000-000000000001"
+      uuid_b = "019d0000-0000-7000-8000-000000000002"
+      a1 = artefact_with([other_node(uuid_a)])
+      a2 = artefact_with([other_node(uuid_b)])
+
+      assert {:ok, [%Artefact.Binding{uuid_a: ^uuid_a, uuid_b: ^uuid_b}]} =
+               Artefact.Binding.find(a1, a2, inject: [{uuid_a, uuid_b}])
+    end
+
+    test "inject combines with automatic matches" do
+      uuid_a = "019d0000-0000-7000-8000-000000000001"
+      uuid_b = "019d0000-0000-7000-8000-000000000002"
+      a1 = artefact_with([shared_node(), other_node(uuid_a)])
+      a2 = artefact_with([shared_node(), other_node(uuid_b)])
+
+      assert {:ok, bindings} = Artefact.Binding.find(a1, a2, inject: [{uuid_a, uuid_b}])
+      assert length(bindings) == 2
     end
   end
 
@@ -227,6 +272,10 @@ defmodule ArtefactTest do
       assert MapSet.member?(labels, ["Format", "Canonical"])
       assert MapSet.member?(labels, ["Struct"])
       assert MapSet.member?(labels, ["Format", "Derived"])
+    end
+
+    test "base_label is Artefact", %{artefact: a} do
+      assert a.base_label == "Artefact"
     end
 
     test "three relationships — the journeys", %{artefact: a} do

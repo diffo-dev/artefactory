@@ -15,8 +15,8 @@ defmodule Artefact.Cypher do
   ensuring nodes shared across multiple relationships are created once.
   Relationships follow, referencing those variables.
   """
-  def create(%Artefact{graph: graph}) do
-    node_patterns = Enum.map(graph.nodes, &node_pattern/1)
+  def create(%Artefact{base_label: base_label, graph: graph}) do
+    node_patterns = Enum.map(graph.nodes, &node_pattern(&1, base_label))
 
     rel_patterns =
       Enum.map(graph.relationships, fn rel ->
@@ -31,8 +31,8 @@ defmodule Artefact.Cypher do
 
   Each node is merged on its uuid; labels and properties are SET afterwards.
   """
-  def merge(%Artefact{graph: graph}) do
-    node_stmts = Enum.map(graph.nodes, &inline_merge_node_stmt/1)
+  def merge(%Artefact{base_label: base_label, graph: graph}) do
+    node_stmts = Enum.map(graph.nodes, &inline_merge_node_stmt(&1, base_label))
 
     rel_stmts =
       Enum.map(graph.relationships, fn rel ->
@@ -47,10 +47,10 @@ defmodule Artefact.Cypher do
   @doc """
   Emit a parameterised Cypher CREATE — returns `{cypher, params}` for driver use (e.g. Bolty).
   """
-  def create_params(%Artefact{graph: graph}) do
+  def create_params(%Artefact{base_label: base_label, graph: graph}) do
     {node_patterns, node_params} =
       graph.nodes
-      |> Enum.map(&params_node_pattern/1)
+      |> Enum.map(&params_node_pattern(&1, base_label))
       |> Enum.unzip()
 
     rel_patterns =
@@ -67,10 +67,10 @@ defmodule Artefact.Cypher do
   @doc """
   Emit parameterised Cypher MERGE — returns `{cypher, params}` for driver use (e.g. Bolty).
   """
-  def merge_params(%Artefact{graph: graph}) do
+  def merge_params(%Artefact{base_label: base_label, graph: graph}) do
     {node_stmts, node_params} =
       graph.nodes
-      |> Enum.map(&params_merge_node_stmt/1)
+      |> Enum.map(&params_merge_node_stmt(&1, base_label))
       |> Enum.unzip()
 
     {rel_stmts, rel_params} =
@@ -91,8 +91,9 @@ defmodule Artefact.Cypher do
 
   # -- inline (browser) merge helpers --
 
-  defp inline_merge_node_stmt(%Artefact.Node{id: id, uuid: uuid, labels: labels, properties: props}) do
-    label_str = Enum.map_join(labels, "", &":#{&1}")
+  defp inline_merge_node_stmt(%Artefact.Node{id: id, uuid: uuid, labels: labels, properties: props}, base_label) do
+    effective = effective_labels(labels, base_label)
+    label_str = Enum.map_join(effective, "", &":#{&1}")
     set_labels = if label_str != "", do: "\nSET #{id}#{label_str}", else: ""
     set_props  = if map_size(props) > 0, do: "\nSET #{id} += #{props_to_cypher(props)}", else: ""
     "MERGE (#{id} {uuid: '#{uuid}'})#{set_labels}#{set_props}"
@@ -108,8 +109,8 @@ defmodule Artefact.Cypher do
 
   # -- parameterised create helpers --
 
-  defp params_node_pattern(%Artefact.Node{id: id, uuid: uuid, labels: labels, properties: props}) do
-    label_str = Enum.map_join(labels, "", &":#{&1}")
+  defp params_node_pattern(%Artefact.Node{id: id, uuid: uuid, labels: labels, properties: props}, base_label) do
+    label_str = labels |> effective_labels(base_label) |> Enum.map_join("", &":#{&1}")
     all_props = Map.put(props, "uuid", uuid)
 
     {inline, params} =
@@ -125,8 +126,8 @@ defmodule Artefact.Cypher do
 
   # -- parameterised merge helpers --
 
-  defp params_merge_node_stmt(%Artefact.Node{id: id, uuid: uuid, labels: labels, properties: props}) do
-    label_str = Enum.map_join(labels, "", &":#{&1}")
+  defp params_merge_node_stmt(%Artefact.Node{id: id, uuid: uuid, labels: labels, properties: props}, base_label) do
+    label_str = labels |> effective_labels(base_label) |> Enum.map_join("", &":#{&1}")
     set_labels = if label_str != "", do: "\nSET #{id}#{label_str}", else: ""
     set_props  = if map_size(props) > 0, do: "\nSET #{id} += $#{id}_props", else: ""
 
@@ -146,11 +147,14 @@ defmodule Artefact.Cypher do
     end
   end
 
-  defp node_pattern(%Artefact.Node{id: id, uuid: uuid, labels: labels, properties: props}) do
-    label_str = Enum.map_join(labels, "", &":#{&1}")
+  defp node_pattern(%Artefact.Node{id: id, uuid: uuid, labels: labels, properties: props}, base_label) do
+    label_str = labels |> effective_labels(base_label) |> Enum.map_join("", &":#{&1}")
     prop_str = props_to_cypher(Map.put(props, "uuid", uuid))
     "(#{id}#{label_str} #{prop_str})"
   end
+
+  defp effective_labels(labels, nil), do: labels
+  defp effective_labels(labels, base_label), do: Enum.uniq(labels ++ [base_label])
 
   defp rel_pattern(%Artefact.Relationship{type: type, properties: props}) do
     prop_str = props_to_cypher(props)
