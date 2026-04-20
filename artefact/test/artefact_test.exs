@@ -50,8 +50,8 @@ defmodule ArtefactTest do
     end
 
     test "harmonise records :harmonised provenance with left and right title, base_label, uuid and provenance" do
-      a1 = artefact_with([shared_node()])
-      a2 = artefact_with([shared_node()])
+      a1 = Artefact.new(base_label: "LeftArtefact", graph: %Artefact.Graph{nodes: [shared_node()], relationships: []})
+      a2 = Artefact.new(base_label: "RightArtefact", graph: %Artefact.Graph{nodes: [shared_node()], relationships: []})
       {:ok, bindings} = Artefact.Binding.find(a1, a2)
       result = Artefact.harmonise(a1, a2, bindings)
       assert %{provenance: %{source: :harmonised, module: ArtefactTest,
@@ -206,7 +206,8 @@ defmodule ArtefactTest do
 
     defp artefact_nodes(nodes) do
       %Artefact{
-        id: "test", uuid: "test", title: nil, base_label: nil, style: nil, metadata: %{},
+        id: Artefact.UUID.generate_v7(), uuid: Artefact.UUID.generate_v7(),
+        title: nil, base_label: nil, style: nil, metadata: %{},
         graph: %Artefact.Graph{nodes: nodes, relationships: []}
       }
     end
@@ -267,6 +268,24 @@ defmodule ArtefactTest do
     end
   end
 
+  describe "Artefact.harmonise/4 — guards" do
+    test "raises when harmonising an artefact with itself" do
+      a = artefact_with([shared_node()])
+      {:ok, bindings} = Artefact.Binding.find(a, a)
+      assert_raise ArgumentError, ~r/cannot harmonise an artefact with itself/, fn ->
+        Artefact.harmonise(a, a, bindings)
+      end
+    end
+
+    test "raises when both artefacts have the same base_label" do
+      a1 = Artefact.new(base_label: "Same")
+      a2 = Artefact.new(base_label: "Same")
+      assert_raise ArgumentError, ~r/cannot harmonise artefacts with the same base_label/, fn ->
+        Artefact.harmonise(a1, a2, [])
+      end
+    end
+  end
+
   describe "Artefact.harmonise/4 — relationship deduplication" do
     @uuid_a "019d0000-0000-7000-8000-000000000010"
     @uuid_b "019d0000-0000-7000-8000-000000000020"
@@ -277,7 +296,8 @@ defmodule ArtefactTest do
         %Artefact.Node{id: id_y, uuid: uuid_y, labels: [], properties: %{}}
       ]
       %Artefact{
-        id: "test", uuid: "test", title: nil, base_label: nil, style: nil, metadata: %{},
+        id: Artefact.UUID.generate_v7(), uuid: Artefact.UUID.generate_v7(),
+        title: nil, base_label: nil, style: nil, metadata: %{},
         graph: %Artefact.Graph{nodes: nodes, relationships: rels}
       }
     end

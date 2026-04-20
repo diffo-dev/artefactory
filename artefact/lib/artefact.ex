@@ -89,6 +89,14 @@ defmodule Artefact do
 
   @doc false
   def do_harmonise(%__MODULE__{} = a1, %__MODULE__{} = a2, bindings, opts, caller) do
+    if a1.uuid == a2.uuid do
+      raise ArgumentError, "cannot harmonise an artefact with itself (uuid: #{a1.uuid})"
+    end
+
+    if a1.base_label != nil and a1.base_label == a2.base_label do
+      raise ArgumentError, "cannot harmonise artefacts with the same base_label (#{a1.base_label})"
+    end
+
     base_label = Keyword.get(opts, :base_label, portmanteau(a1.base_label, a2.base_label))
     title      = Keyword.get(opts, :title, base_label)
 
