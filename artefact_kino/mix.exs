@@ -29,7 +29,7 @@ defmodule ArtefactKino.MixProject do
 
   defp deps do
     [
-      {:artefact, "~> 0.1", path: "../artefact"},
+      {:artefact, "~> 0.1", path: Path.expand("../artefact", __DIR__)},
       {:kino, "~> 0.14"},
       {:ex_doc, "~> 0.37", only: [:dev, :test], runtime: false}
     ]
