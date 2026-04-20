@@ -1,0 +1,11 @@
+CREATE (n0:Operation:CreateMerge {meaning: 'Always creates fresh nodes', name: 'CREATE', uuid: '019da8a0-0597-7e92-9ae2-c497f4bc75d0'}),
+       (n1:Operation:CreateMerge {meaning: 'Upserts by uuid identity', name: 'MERGE', uuid: '019da8a0-0597-7f8e-85f0-b37d4d920ce2'}),
+       (n2:Outcome:CreateMerge {meaning: 'Duplicate node from repeated CREATE', name: 'Twin', uuid: '019da8a0-0597-78ea-8a59-cc1eb802f542'}),
+       (n3:Outcome:CreateMerge {meaning: 'One node regardless of repetition', name: 'Singleton', uuid: '019da8a0-0597-751d-b870-6ffa2c246cf1'}),
+       (n4:Struct:CreateMerge {name: 'Artefact', uuid: '019da897-f2e0-74b2-ab91-4d68115d4f71'}),
+       (n0)-[:PRODUCES]->(n2),
+       (n1)-[:PREVENTS]->(n2),
+       (n1)-[:PRODUCES]->(n3),
+       (n1)-[:UPDATES]->(n3),
+       (n4)-[:HAS_OPERATION]->(n0),
+       (n4)-[:HAS_OPERATION]->(n1)

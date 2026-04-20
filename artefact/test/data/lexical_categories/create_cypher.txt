@@ -1,0 +1,7 @@
+CREATE (n0:LexicalCategory:Noun:LexicalCategories {name: 'Noun', uuid: '019da897-f2e1-713d-a858-1155a337bd5e'}),
+       (n1:LexicalCategory:Verb:LexicalCategories {name: 'Verb', uuid: '019da897-f2e1-794e-8120-793aacf673ca'}),
+       (n2:LexicalCategory:Adjective:LexicalCategories {name: 'Adjective', uuid: '019da897-f2e1-7fef-8529-64948f24d0fc'}),
+       (n3:LexicalCategory:Adverb:LexicalCategories {name: 'Adverb', uuid: '019da897-f2e1-7b6c-b4a0-a4b2714e8816'}),
+       (n2)-[:DESCRIBES]->(n0),
+       (n3)-[:INTENSIFIES]->(n1),
+       (n3)-[:QUALIFIES]->(n2)

@@ -1,0 +1,15 @@
+MERGE (n0 {uuid: '019da897-f2e1-713d-a858-1155a337bd5e'})
+SET n0:LexicalCategory:Noun:LexicalCategories
+SET n0 += {name: 'Noun'}
+MERGE (n1 {uuid: '019da897-f2e1-794e-8120-793aacf673ca'})
+SET n1:LexicalCategory:Verb:LexicalCategories
+SET n1 += {name: 'Verb'}
+MERGE (n2 {uuid: '019da897-f2e1-7fef-8529-64948f24d0fc'})
+SET n2:LexicalCategory:Adjective:LexicalCategories
+SET n2 += {name: 'Adjective'}
+MERGE (n3 {uuid: '019da897-f2e1-7b6c-b4a0-a4b2714e8816'})
+SET n3:LexicalCategory:Adverb:LexicalCategories
+SET n3 += {name: 'Adverb'}
+MERGE (n2)-[:DESCRIBES]->(n0)
+MERGE (n3)-[:INTENSIFIES]->(n1)
+MERGE (n3)-[:QUALIFIES]->(n2)
