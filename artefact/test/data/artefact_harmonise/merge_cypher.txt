@@ -1,0 +1,31 @@
+MERGE (n0 {uuid: '019da93e-ef0c-774e-b2f5-385d9da61db9'})
+SET n0:Operation:ArtefactHarmonise
+SET n0 += {meaning: 'Disjoint union; nodes reindexed to avoid id collision', name: 'compose'}
+MERGE (n1 {uuid: '019da93e-ef0c-7f46-bcc5-34b814ba0a3b'})
+SET n1:Operation:ArtefactHarmonise
+SET n1 += {meaning: 'Merge bound nodes; lower uuid wins identity, labels unioned, left-wins properties', name: 'harmonise'}
+MERGE (n2 {uuid: '019da93e-ef0c-7f50-a41b-c37bef7a232d'})
+SET n2:Mechanism:ArtefactHarmonise
+SET n2 += {meaning: 'Declares node equivalence; auto-detected by shared uuid or injected explicitly', name: 'Binding'}
+MERGE (n3 {uuid: '019da93e-ef0c-7257-b962-6b8a46a8e712'})
+SET n3:Outcome:ArtefactHarmonise
+SET n3 += {meaning: 'Graphs side by side; label-based implicit relationships', name: 'Disjoint'}
+MERGE (n4 {uuid: '019da93e-ef0c-75ed-95d2-e805513d2b7d'})
+SET n4:Outcome:ArtefactHarmonise
+SET n4 += {meaning: 'Bound nodes fused; relationships deduplicated by from/type/to, left-wins properties', name: 'Merged'}
+MERGE (n5 {uuid: '019da93e-ef0c-7cda-90d3-e34bf1541ddb'})
+SET n5:Guard:ArtefactHarmonise
+SET n5 += {meaning: 'Artefact cannot be harmonised with itself', name: 'SameUUID'}
+MERGE (n6 {uuid: '019da93e-ef0c-733d-9971-662b0d380c11'})
+SET n6:Guard:ArtefactHarmonise
+SET n6 += {meaning: 'Artefacts from the same base_label family cannot be harmonised', name: 'SameBaseLabel'}
+MERGE (n7 {uuid: '019da897-f2e0-74b2-ab91-4d68115d4f71'})
+SET n7:Struct:ArtefactHarmonise
+SET n7 += {name: 'Artefact'}
+MERGE (n7)-[:HAS_OPERATION]->(n0)
+MERGE (n7)-[:HAS_OPERATION]->(n1)
+MERGE (n1)-[:REQUIRES]->(n2)
+MERGE (n0)-[:PRODUCES]->(n3)
+MERGE (n1)-[:PRODUCES]->(n4)
+MERGE (n1)-[:RAISES_ON]->(n5)
+MERGE (n1)-[:RAISES_ON]->(n6)

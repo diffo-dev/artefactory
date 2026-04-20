@@ -2,7 +2,15 @@
 # SPDX-License-Identifier: MIT
 
 defmodule Artefact.Node do
-  @moduledoc false
+  @moduledoc """
+  A node in an `%Artefact{}` graph.
+
+  `id` is the local graph identifier (e.g. `"n0"`), stable within one artefact.
+  `uuid` is the global identity — a UUIDv7 that survives compose and harmonise.
+  `labels` are semantic type tags (base_label is applied at output time, not stored here).
+  `position` is an optional `%{x, y}` hint for visual layout, sourced from Arrows JSON.
+  """
+
   defstruct [:id, :uuid, :position, labels: [], properties: %{}]
 
   @type t :: %__MODULE__{
@@ -15,7 +23,13 @@ defmodule Artefact.Node do
 end
 
 defmodule Artefact.Relationship do
-  @moduledoc false
+  @moduledoc """
+  A directed relationship between two nodes in an `%Artefact{}` graph.
+
+  `type` is a single CamelCase or SCREAMING_SNAKE_CASE string (Neo4j has no multi-label
+  relationships). `from_id` and `to_id` reference node `id` fields within the same graph.
+  """
+
   defstruct [:id, :type, :from_id, :to_id, properties: %{}]
 
   @type t :: %__MODULE__{
@@ -28,7 +42,17 @@ defmodule Artefact.Relationship do
 end
 
 defmodule Artefact.Graph do
-  @moduledoc false
+  @moduledoc """
+  The property graph inside an `%Artefact{}` — a list of nodes and relationships.
+
+  Constructed directly when building artefacts from structs:
+
+      %Artefact.Graph{
+        nodes: [%Artefact.Node{...}, ...],
+        relationships: [%Artefact.Relationship{...}, ...]
+      }
+  """
+
   defstruct nodes: [], relationships: []
 
   @type t :: %__MODULE__{

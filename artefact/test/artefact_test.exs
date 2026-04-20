@@ -492,6 +492,45 @@ defmodule ArtefactTest do
     end
   end
 
+  describe "artefact_harmonise self-description" do
+    setup do
+      json = File.read!(Path.join([@fixtures, "artefact_harmonise", "arrows.json"]))
+      %{artefact: Artefact.Arrows.from_json!(json, id: "artefact-harmonise")}
+    end
+
+    test "eight nodes", %{artefact: a} do
+      assert length(a.graph.nodes) == 8
+    end
+
+    test "base_label is ArtefactHarmonise", %{artefact: a} do
+      assert a.base_label == "ArtefactHarmonise"
+    end
+
+    test "has compose, harmonise, Binding, guards and outcomes", %{artefact: a} do
+      names = Enum.map(a.graph.nodes, & &1.properties["name"]) |> MapSet.new()
+      assert MapSet.member?(names, "compose")
+      assert MapSet.member?(names, "harmonise")
+      assert MapSet.member?(names, "Binding")
+      assert MapSet.member?(names, "SameUUID")
+      assert MapSet.member?(names, "SameBaseLabel")
+    end
+
+    test "Artefact struct node has shared uuid", %{artefact: a} do
+      artefact_node = Enum.find(a.graph.nodes, &(&1.properties["name"] == "Artefact"))
+      assert artefact_node.uuid == "019da897-f2e0-74b2-ab91-4d68115d4f71"
+    end
+
+    test "create Cypher matches fixture", %{artefact: a} do
+      expected = File.read!(Path.join([@fixtures, "artefact_harmonise", "create_cypher.txt"])) |> String.trim()
+      assert Artefact.Cypher.create(a) == expected
+    end
+
+    test "merge Cypher matches fixture", %{artefact: a} do
+      expected = File.read!(Path.join([@fixtures, "artefact_harmonise", "merge_cypher.txt"])) |> String.trim()
+      assert Artefact.Cypher.merge(a) == expected
+    end
+  end
+
   describe "artefact_combine self-description" do
     setup do
       json = File.read!(Path.join([@fixtures, "artefact_combine", "arrows.json"]))

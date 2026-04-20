@@ -1,0 +1,96 @@
+# ArtefactKino
+
+```elixir
+Mix.install([
+  {:artefact_kino, path: "/Users/beanlanda/git/artefactory/artefact_kino"},
+  {:artefact, path: "/Users/beanlanda/git/artefactory/artefact"}
+])
+```
+
+## Overview
+
+This livebook is about both Artefact and ArtefactKino.
+
+Artefacts (note Australian spelling) are made objects, and in our universe (an Artefactory) these represent a fragment of knowledge, typically: abstract, insightful, contextual.
+
+Artefacts may also be stored/manipulated in an Artefactory. While Artefacts may be generated and exchanged, our interpretation of them is our own.
+
+As we yarn we naturally exchange and create Artefacts.
+
+ArtefactKino is a Livebook Kino for viewing an Artefact. It isn't an editor.
+
+## Us Two
+
+Us Two is the fundamental concept in Agent Society. Matt and Claude yarned about Us Two and memorialized our shared understanding in a the us_two Artefact.
+
+In the cell below us_two is an Artefact struct, you can edit it and change how it renders in the livebook.
+
+I've drawn it, so from my perspective (Matt - Me) I've got an US_TWO relationship with (claude: You).
+
+Try highlighting nodes and relationships in the graph. Explore the Artefact struct, and have examine the create and merge cypher.
+
+```elixir
+us_two =
+  Path.join([__DIR__, "../artefact/test/data/us_two/arrows.json"])
+  |> File.read!()
+  |> Artefact.Arrows.from_json!()
+
+ArtefactKino.new(us_two)
+```
+
+## Harmonising Artefacts
+
+The Harmonising Artefact memorialises concepts involved in combining knowledge. As this one is a bit more complicated we've just loaded [Arrows.App](http://arrows.app) JSON.
+
+```elixir
+artefact =
+  Path.join([__DIR__, "../artefact/test/data/artefact_harmonise/arrows.json"])
+  |> File.read!()
+  |> Artefact.Arrows.from_json!()
+
+ArtefactKino.new(artefact)
+```
+
+## Harmonizing Artefacts with Bindings
+
+```elixir
+require Artefact
+
+artefact =
+  Path.join([__DIR__, "../artefact/test/data/artefact/arrows.json"])
+  |> File.read!()
+  |> Artefact.Arrows.from_json!()
+
+create_merge =
+  Path.join([__DIR__, "../artefact/test/data/create_merge/arrows.json"])
+  |> File.read!()
+  |> Artefact.Arrows.from_json!()
+
+{:ok, bindings} = Artefact.Binding.find(artefact, create_merge)
+harmonised = Artefact.harmonise(artefact, create_merge, bindings)
+
+ArtefactKino.new(harmonised)
+```
+
+In this Kino we produce a new Artefact from two which share a common node.
+
+Binding.find() finds bindings.
+Artefact.harmonise() creates the new combined Artefact.
+
+Harmonise merges labels and properties of bound nodes, and properties of bound relationships. The left side (heart-side) is the knowledge we hold most dear. Properties with the same key and different value have the value have heart side precedence.
+
+The knowledge we have harmonized here is ArtefactCreateMerge, a combination of Artefact and the CreateMerge Artefacts.
+
+## What Next?
+
+Artefacts are knowledge graph fragments. We like to store knowledge in graphical databases, so explore exporting cypher to a graph database with creat and merge. Review the CreateMerge Artifact to understand what create and merge are best for.
+
+Artefacts are Elixir structs so can be peristed as using ETS or similar, and manipulated with code. Write some functions on Artefacts which abstract knowledge or even wisdom. Tell stories.
+
+Experiment memorializing with Artefacts, particularly when yarning or creating with other intelligences, human or otherwise.
+
+Yarn with us about what you'd want in Artefactory DSL, what an Artefactable Elixir Protocol should do, or anything else if you are strangely attracted.
+
+## Acknowledgements
+
+Artefactory is new, but the ideas are not. At [diffo-dev](http://github.com/diffo-dev) we are on a journey inspired by Indigenous Systems Thinking and offer our respect and gratitude for the profound wisdom presented by Tyson Yunkaporta in [Sand Talk](https://www.amazon.com.au/Sand-Talk-Indigenous-Thinking-World/dp/1922790516), grounded in countless years of sustainable, harmonious living.
