@@ -84,13 +84,13 @@ defmodule ArtefactTest do
     end
   end
 
-  describe "Artefact.Cypher.export/1 — us_two" do
+  describe "Artefact.Cypher.create/1 — us_two" do
     test "matches fixture" do
       json = File.read!(Path.join([@fixtures, "us_two", "arrows.json"]))
       expected = File.read!(Path.join([@fixtures, "us_two", "create_cypher.txt"])) |> String.trim()
 
       artefact = Artefact.Arrows.from_json!(json)
-      assert Artefact.Cypher.export(artefact) == expected
+      assert Artefact.Cypher.create(artefact) == expected
     end
   end
 
@@ -115,7 +115,7 @@ defmodule ArtefactTest do
 
     test "Cypher export matches fixture", %{artefact: a} do
       expected = File.read!(Path.join([@fixtures, "artefact", "create_cypher.txt"])) |> String.trim()
-      assert Artefact.Cypher.export(a) == expected
+      assert Artefact.Cypher.create(a) == expected
     end
   end
 end

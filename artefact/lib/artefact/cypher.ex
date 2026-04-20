@@ -3,19 +3,19 @@
 
 defmodule Artefact.Cypher do
   @moduledoc """
-  Derives a Cypher CREATE fragment from an `%Artefact{}`.
+  Derives Cypher from an `%Artefact{}`.
 
   Lossy: position and style are not represented in Cypher.
   """
 
   @doc """
-  Export an artefact as a Cypher CREATE statement.
+  Emit a Cypher CREATE statement — always creates new nodes.
 
   Nodes are emitted first with their Arrows id as a Cypher variable,
   ensuring nodes shared across multiple relationships are created once.
   Relationships follow, referencing those variables.
   """
-  def export(%Artefact{graph: graph}) do
+  def create(%Artefact{graph: graph}) do
     node_patterns = Enum.map(graph.nodes, &node_pattern/1)
 
     rel_patterns =
