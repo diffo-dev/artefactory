@@ -6,7 +6,9 @@ defmodule Artefact do
   A knowledge graph fragment — a small, self-contained piece of knowledge
   expressed as a property graph.
 
-  The canonical form is Arrows JSON. Everything else is derived from it.
+  The canonical form is the `%Artefact{}` struct. Arrows JSON and Cypher are
+  derived representations: JSON for interchange and visual editing, Cypher for
+  persistence.
   """
 
   defstruct [:id, :uuid, :title, :base_label, :style, metadata: %{}, graph: %Artefact.Graph{}]
@@ -104,9 +106,11 @@ defmodule Artefact do
               to_id:   Map.get(b_id_remap, rel.to_id,   rel.to_id)}
     end)
 
+    relationships = deduplicate_rels(a1.graph.relationships, rels_from_b)
+
     graph = %Artefact.Graph{
       nodes:         nodes_from_a ++ b_nodes_reindexed,
-      relationships: a1.graph.relationships ++ rels_from_b
+      relationships: relationships
     }
 
     build([{:title, title}, {:base_label, base_label}, {:graph, graph}])
@@ -115,6 +119,23 @@ defmodule Artefact do
   @doc false
   def build(attrs) do
     struct!(__MODULE__, [{:id, Artefact.UUID.generate_v7()}, {:uuid, Artefact.UUID.generate_v7()} | attrs])
+  end
+
+  defp deduplicate_rels(rels_a, rels_b) do
+    index = Map.new(rels_a, fn rel -> {{rel.from_id, rel.type, rel.to_id}, rel} end)
+
+    merged_index =
+      Enum.reduce(rels_b, index, fn rel, acc ->
+        key = {rel.from_id, rel.type, rel.to_id}
+        case Map.fetch(acc, key) do
+          {:ok, existing} ->
+            Map.put(acc, key, %{existing | properties: Map.merge(rel.properties, existing.properties)})
+          :error ->
+            Map.put(acc, key, rel)
+        end
+      end)
+
+    Map.values(merged_index)
   end
 
   defp merge_graphs(g1, g2) do

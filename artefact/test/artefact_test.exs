@@ -143,6 +143,135 @@ defmodule ArtefactTest do
     end
   end
 
+  describe "Artefact.harmonise/4 — property merge" do
+    @uuid_shared "019d0000-0000-7000-8000-000000000000"
+
+    defp node_with_props(uuid, props) do
+      %Artefact.Node{id: "n0", uuid: uuid, labels: [], properties: props}
+    end
+
+    defp artefact_nodes(nodes) do
+      %Artefact{
+        id: "test", uuid: "test", title: nil, base_label: nil, style: nil, metadata: %{},
+        graph: %Artefact.Graph{nodes: nodes, relationships: []}
+      }
+    end
+
+    test "different keys are merged into bound node" do
+      n_a = %{node_with_props(@uuid_shared, %{"key_a" => "from_a"}) | id: "n0"}
+      n_b = %{node_with_props(@uuid_shared, %{"key_b" => "from_b"}) | id: "n0"}
+      a1 = artefact_nodes([n_a])
+      a2 = artefact_nodes([n_b])
+      {:ok, bindings} = Artefact.Binding.find(a1, a2)
+      result = Artefact.harmonise(a1, a2, bindings)
+      [merged] = result.graph.nodes
+      assert merged.properties == %{"key_a" => "from_a", "key_b" => "from_b"}
+    end
+
+    test "same key same value — one copy survives" do
+      n_a = %{node_with_props(@uuid_shared, %{"key" => "same"}) | id: "n0"}
+      n_b = %{node_with_props(@uuid_shared, %{"key" => "same"}) | id: "n0"}
+      a1 = artefact_nodes([n_a])
+      a2 = artefact_nodes([n_b])
+      {:ok, bindings} = Artefact.Binding.find(a1, a2)
+      result = Artefact.harmonise(a1, a2, bindings)
+      [merged] = result.graph.nodes
+      assert merged.properties == %{"key" => "same"}
+    end
+
+    test "same key different value — left (a1) wins" do
+      n_a = %{node_with_props(@uuid_shared, %{"key" => "left"}) | id: "n0"}
+      n_b = %{node_with_props(@uuid_shared, %{"key" => "right"}) | id: "n0"}
+      a1 = artefact_nodes([n_a])
+      a2 = artefact_nodes([n_b])
+      {:ok, bindings} = Artefact.Binding.find(a1, a2)
+      result = Artefact.harmonise(a1, a2, bindings)
+      [merged] = result.graph.nodes
+      assert merged.properties["key"] == "left"
+    end
+
+    test "labels are unioned" do
+      n_a = %Artefact.Node{id: "n0", uuid: @uuid_shared, labels: ["LabelA"], properties: %{}}
+      n_b = %Artefact.Node{id: "n0", uuid: @uuid_shared, labels: ["LabelB"], properties: %{}}
+      a1 = artefact_nodes([n_a])
+      a2 = artefact_nodes([n_b])
+      {:ok, bindings} = Artefact.Binding.find(a1, a2)
+      result = Artefact.harmonise(a1, a2, bindings)
+      [merged] = result.graph.nodes
+      assert Enum.sort(merged.labels) == ["LabelA", "LabelB"]
+    end
+
+    test "shared label appears once in union" do
+      n_a = %Artefact.Node{id: "n0", uuid: @uuid_shared, labels: ["Shared", "OnlyA"], properties: %{}}
+      n_b = %Artefact.Node{id: "n0", uuid: @uuid_shared, labels: ["Shared", "OnlyB"], properties: %{}}
+      a1 = artefact_nodes([n_a])
+      a2 = artefact_nodes([n_b])
+      {:ok, bindings} = Artefact.Binding.find(a1, a2)
+      result = Artefact.harmonise(a1, a2, bindings)
+      [merged] = result.graph.nodes
+      assert Enum.sort(merged.labels) == ["OnlyA", "OnlyB", "Shared"]
+    end
+  end
+
+  describe "Artefact.harmonise/4 — relationship deduplication" do
+    @uuid_a "019d0000-0000-7000-8000-000000000010"
+    @uuid_b "019d0000-0000-7000-8000-000000000020"
+
+    defp two_node_artefact(uuid_x, uuid_y, id_x, id_y, rels) do
+      nodes = [
+        %Artefact.Node{id: id_x, uuid: uuid_x, labels: [], properties: %{}},
+        %Artefact.Node{id: id_y, uuid: uuid_y, labels: [], properties: %{}}
+      ]
+      %Artefact{
+        id: "test", uuid: "test", title: nil, base_label: nil, style: nil, metadata: %{},
+        graph: %Artefact.Graph{nodes: nodes, relationships: rels}
+      }
+    end
+
+    test "identical relationship appears once after harmonise" do
+      a1 = two_node_artefact(@uuid_a, @uuid_b, "n0", "n1",
+        [%Artefact.Relationship{id: "r0", from_id: "n0", to_id: "n1", type: "KNOWS", properties: %{}}])
+      a2 = two_node_artefact(@uuid_a, @uuid_b, "n0", "n1",
+        [%Artefact.Relationship{id: "r0", from_id: "n0", to_id: "n1", type: "KNOWS", properties: %{}}])
+      {:ok, bindings} = Artefact.Binding.find(a1, a2)
+      result = Artefact.harmonise(a1, a2, bindings)
+      assert length(result.graph.relationships) == 1
+    end
+
+    test "different type relationships both survive" do
+      a1 = two_node_artefact(@uuid_a, @uuid_b, "n0", "n1",
+        [%Artefact.Relationship{id: "r0", from_id: "n0", to_id: "n1", type: "KNOWS", properties: %{}}])
+      a2 = two_node_artefact(@uuid_a, @uuid_b, "n0", "n1",
+        [%Artefact.Relationship{id: "r1", from_id: "n0", to_id: "n1", type: "TRUSTS", properties: %{}}])
+      {:ok, bindings} = Artefact.Binding.find(a1, a2)
+      result = Artefact.harmonise(a1, a2, bindings)
+      assert length(result.graph.relationships) == 2
+    end
+
+    test "opposite direction relationships both survive" do
+      a1 = two_node_artefact(@uuid_a, @uuid_b, "n0", "n1",
+        [%Artefact.Relationship{id: "r0", from_id: "n0", to_id: "n1", type: "KNOWS", properties: %{}}])
+      a2 = two_node_artefact(@uuid_a, @uuid_b, "n0", "n1",
+        [%Artefact.Relationship{id: "r1", from_id: "n1", to_id: "n0", type: "KNOWS", properties: %{}}])
+      {:ok, bindings} = Artefact.Binding.find(a1, a2)
+      result = Artefact.harmonise(a1, a2, bindings)
+      assert length(result.graph.relationships) == 2
+    end
+
+    test "duplicate relationship properties merged left-wins" do
+      a1 = two_node_artefact(@uuid_a, @uuid_b, "n0", "n1",
+        [%Artefact.Relationship{id: "r0", from_id: "n0", to_id: "n1", type: "KNOWS", properties: %{"since" => "2020", "trust" => "high"}}])
+      a2 = two_node_artefact(@uuid_a, @uuid_b, "n0", "n1",
+        [%Artefact.Relationship{id: "r1", from_id: "n0", to_id: "n1", type: "KNOWS", properties: %{"since" => "2019", "source" => "intro"}}])
+      {:ok, bindings} = Artefact.Binding.find(a1, a2)
+      result = Artefact.harmonise(a1, a2, bindings)
+      [rel] = result.graph.relationships
+      assert rel.properties["since"] == "2020"
+      assert rel.properties["trust"] == "high"
+      assert rel.properties["source"] == "intro"
+    end
+  end
+
   describe "Artefact.UUID" do
     test "generate_v7 produces version 7" do
       assert String.at(Artefact.UUID.generate_v7(), 14) == "7"
@@ -286,6 +415,42 @@ defmodule ArtefactTest do
     test "Cypher export matches fixture", %{artefact: a} do
       expected = File.read!(Path.join([@fixtures, "artefact", "create_cypher.txt"])) |> String.trim()
       assert Artefact.Cypher.create(a) == expected
+    end
+  end
+
+  describe "artefact_combine self-description" do
+    setup do
+      json = File.read!(Path.join([@fixtures, "artefact_combine", "arrows.json"]))
+      %{artefact: Artefact.Arrows.from_json!(json, id: "artefact-combine")}
+    end
+
+    test "seven nodes", %{artefact: a} do
+      assert length(a.graph.nodes) == 7
+    end
+
+    test "base_label is ArtefactCombine", %{artefact: a} do
+      assert a.base_label == "ArtefactCombine"
+    end
+
+    test "has compose and harmonise operations", %{artefact: a} do
+      names = Enum.map(a.graph.nodes, & &1.properties["name"]) |> MapSet.new()
+      assert MapSet.member?(names, "compose")
+      assert MapSet.member?(names, "harmonise")
+    end
+
+    test "Artefact struct node has shared uuid", %{artefact: a} do
+      artefact_node = Enum.find(a.graph.nodes, &(&1.properties["name"] == "Artefact"))
+      assert artefact_node.uuid == "019da897-f2e0-74b2-ab91-4d68115d4f71"
+    end
+
+    test "create Cypher matches fixture", %{artefact: a} do
+      expected = File.read!(Path.join([@fixtures, "artefact_combine", "create_cypher.txt"])) |> String.trim()
+      assert Artefact.Cypher.create(a) == expected
+    end
+
+    test "merge Cypher matches fixture", %{artefact: a} do
+      expected = File.read!(Path.join([@fixtures, "artefact_combine", "merge_cypher.txt"])) |> String.trim()
+      assert Artefact.Cypher.merge(a) == expected
     end
   end
 end

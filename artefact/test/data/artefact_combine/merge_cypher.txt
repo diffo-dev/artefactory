@@ -1,0 +1,28 @@
+MERGE (n0 {uuid: '019da910-6bb6-7d40-abb9-f06399275cd7'})
+SET n0:Operation:ArtefactCombine
+SET n0 += {meaning: 'Disjoint union of two artefacts', name: 'compose'}
+MERGE (n1 {uuid: '019da910-6bb6-79a4-9269-cad0d4260440'})
+SET n1:Operation:ArtefactCombine
+SET n1 += {meaning: 'Merge bound nodes across two artefacts', name: 'harmonise'}
+MERGE (n2 {uuid: '019da910-6bb6-7441-b08d-276246e242eb'})
+SET n2:Mechanism:ArtefactCombine
+SET n2 += {meaning: 'Declares node equivalence across artefacts', name: 'Binding'}
+MERGE (n3 {uuid: '019da910-6bb6-7baa-9751-dbdc5b8a5fae'})
+SET n3:Outcome:ArtefactCombine
+SET n3 += {meaning: 'Graphs side by side, nodes independent', name: 'Disjoint'}
+MERGE (n4 {uuid: '019da910-6bb6-7a53-b5a6-7790d8baf8ce'})
+SET n4:Outcome:ArtefactCombine
+SET n4 += {meaning: 'Bound nodes fused, labels unioned, left-wins properties', name: 'Merged'}
+MERGE (n5 {uuid: '019da910-6bb6-7b32-82dd-e08d0b1cd0da'})
+SET n5:Strategy:ArtefactCombine
+SET n5 += {meaning: 'base_label is concatenation of both artefacts', name: 'Portmanteau'}
+MERGE (n6 {uuid: '019da897-f2e0-74b2-ab91-4d68115d4f71'})
+SET n6:Struct:ArtefactCombine
+SET n6 += {name: 'Artefact'}
+MERGE (n6)-[:HAS_OPERATION]->(n0)
+MERGE (n6)-[:HAS_OPERATION]->(n1)
+MERGE (n1)-[:REQUIRES]->(n2)
+MERGE (n0)-[:PRODUCES]->(n3)
+MERGE (n1)-[:PRODUCES]->(n4)
+MERGE (n0)-[:NAMES_WITH]->(n5)
+MERGE (n1)-[:NAMES_WITH]->(n5)

@@ -3,7 +3,11 @@
 
 defmodule Artefact.Arrows do
   @moduledoc """
-  Lossless round-trip between `%Artefact{}` and Arrows JSON.
+  Encode and decode between `%Artefact{}` and Arrows JSON.
+
+  `to_json/1` exports the canonical struct to Arrows JSON for interchange and
+  visual editing. `from_json/2` imports Arrows JSON — for example, from the
+  Arrows graph editor — back into a struct.
 
   Fields dropped on import (render concerns only):
   - `caption` on nodes — no Cypher equivalent
