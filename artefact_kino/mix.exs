@@ -17,7 +17,7 @@ defmodule ArtefactKino.MixProject do
       deps: deps(),
       package: package(),
       name: "ArtefactKino",
-      description: "Livebook Kino widget for rendering Artefactory knowledge graphs via vis-network",
+      description: "Livebook Kino widget for rendering Artefactory knowledge graph fragments (Artefacts)",
       source_url: @github_url,
       docs: docs()
     ]
