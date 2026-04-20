@@ -93,7 +93,7 @@ lexical categories.
 |------|----------|---------|
 | Artefact | Noun | An insightful knowledge fragment |
 | Artefacture | Noun | The whole practice of working with artefacts |
-| Artefactory | Noun | The universe of artefact-related stuff; also a repository of artefacts held |
+| Artefactory | Noun | A universe of artefact-related stuff; also a repository of artefacts held |
 | Artefackery | Noun | Misuse of Artefacture — worthy of its own artefact |
 | Artefacting | Verb | Doing stuff with artefacts |
 | Artefactable | Adjective | Implements the `Artefactable` Elixir protocol |
