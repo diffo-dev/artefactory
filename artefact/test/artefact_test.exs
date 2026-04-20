@@ -38,6 +38,19 @@ defmodule ArtefactTest do
       assert by_id["n1"].properties == %{"name" => "Claude"}
     end
 
+    test "nodes have a uuid", %{artefact: a} do
+      Enum.each(a.graph.nodes, fn node ->
+        assert is_binary(node.uuid)
+        assert String.length(node.uuid) == 36
+      end)
+    end
+
+    test "uuid is not in properties", %{artefact: a} do
+      Enum.each(a.graph.nodes, fn node ->
+        refute Map.has_key?(node.properties, "uuid")
+      end)
+    end
+
     test "nodes preserve position", %{artefact: a} do
       by_id = Map.new(a.graph.nodes, &{&1.id, &1})
       assert %{x: _, y: _} = by_id["n0"].position
@@ -80,7 +93,26 @@ defmodule ArtefactTest do
         assert rt_node.labels == orig_node.labels
         assert rt_node.properties == orig_node.properties
         assert rt_node.position == orig_node.position
+        assert rt_node.uuid == orig_node.uuid
       end)
+    end
+  end
+
+  describe "Artefact.UUID" do
+    test "generate_v7 produces version 7" do
+      assert String.at(Artefact.UUID.generate_v7(), 14) == "7"
+    end
+
+    test "harmonise returns the lower of two uuids" do
+      a = "018f0000-0000-7000-8000-000000000000"
+      b = "018f0000-0000-7000-8000-000000000001"
+      assert Artefact.UUID.harmonise(a, b) == a
+      assert Artefact.UUID.harmonise(b, a) == a
+    end
+
+    test "harmonise is idempotent" do
+      a = "018f0000-0000-7000-8000-000000000000"
+      assert Artefact.UUID.harmonise(a, a) == a
     end
   end
 
@@ -91,6 +123,95 @@ defmodule ArtefactTest do
 
       artefact = Artefact.Arrows.from_json!(json)
       assert Artefact.Cypher.create(artefact) == expected
+    end
+  end
+
+  describe "Artefact.Cypher.merge/1 — us_two" do
+    setup do
+      json = File.read!(Path.join([@fixtures, "us_two", "arrows.json"]))
+      artefact = Artefact.Arrows.from_json!(json)
+      %{artefact: artefact, cypher: Artefact.Cypher.merge(artefact)}
+    end
+
+    test "returns a string", %{cypher: cypher} do
+      assert is_binary(cypher)
+    end
+
+    test "produces MERGE not CREATE", %{cypher: cypher} do
+      assert String.contains?(cypher, "MERGE")
+      refute String.contains?(cypher, "CREATE")
+    end
+
+    test "merges each node on its uuid inline", %{artefact: a, cypher: cypher} do
+      Enum.each(a.graph.nodes, fn node ->
+        assert String.contains?(cypher, "uuid: '#{node.uuid}'")
+      end)
+    end
+
+    test "sets labels separately", %{cypher: cypher} do
+      assert String.contains?(cypher, "SET")
+      assert String.contains?(cypher, ":Agent")
+    end
+  end
+
+  describe "Artefact.Cypher.merge_params/1 — us_two" do
+    setup do
+      json = File.read!(Path.join([@fixtures, "us_two", "arrows.json"]))
+      artefact = Artefact.Arrows.from_json!(json)
+      {cypher, params} = Artefact.Cypher.merge_params(artefact)
+      %{artefact: artefact, cypher: cypher, params: params}
+    end
+
+    test "returns cypher and params tuple", %{cypher: cypher, params: params} do
+      assert is_binary(cypher)
+      assert is_map(params)
+    end
+
+    test "produces MERGE not CREATE", %{cypher: cypher} do
+      assert String.contains?(cypher, "MERGE")
+      refute String.contains?(cypher, "CREATE")
+    end
+
+    test "merges each node on a uuid param", %{artefact: a, cypher: cypher, params: params} do
+      Enum.each(a.graph.nodes, fn node ->
+        assert String.contains?(cypher, "uuid: $#{node.id}_uuid")
+        assert params["#{node.id}_uuid"] == node.uuid
+      end)
+    end
+
+    test "node properties are in params not inline", %{artefact: a, cypher: cypher, params: params} do
+      Enum.each(a.graph.nodes, fn node ->
+        assert String.contains?(cypher, "$#{node.id}_props")
+        assert params["#{node.id}_props"] == node.properties
+      end)
+    end
+  end
+
+  describe "Artefact.Cypher.create_params/1 — us_two" do
+    setup do
+      json = File.read!(Path.join([@fixtures, "us_two", "arrows.json"]))
+      artefact = Artefact.Arrows.from_json!(json)
+      {cypher, params} = Artefact.Cypher.create_params(artefact)
+      %{artefact: artefact, cypher: cypher, params: params}
+    end
+
+    test "returns cypher and params tuple", %{cypher: cypher, params: params} do
+      assert is_binary(cypher)
+      assert is_map(params)
+    end
+
+    test "produces CREATE not MERGE", %{cypher: cypher} do
+      assert String.contains?(cypher, "CREATE")
+      refute String.contains?(cypher, "MERGE")
+    end
+
+    test "node properties are in params not inline", %{artefact: a, cypher: cypher, params: params} do
+      Enum.each(a.graph.nodes, fn node ->
+        Enum.each(node.properties, fn {k, v} ->
+          assert String.contains?(cypher, "$#{node.id}_#{k}")
+          assert params["#{node.id}_#{k}"] == v
+        end)
+      end)
     end
   end
 

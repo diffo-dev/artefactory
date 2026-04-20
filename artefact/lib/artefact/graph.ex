@@ -3,10 +3,11 @@
 
 defmodule Artefact.Node do
   @moduledoc false
-  defstruct [:id, :position, labels: [], properties: %{}]
+  defstruct [:id, :uuid, :position, labels: [], properties: %{}]
 
   @type t :: %__MODULE__{
           id: String.t(),
+          uuid: String.t(),
           labels: [String.t()],
           properties: map(),
           position: %{x: number(), y: number()} | nil

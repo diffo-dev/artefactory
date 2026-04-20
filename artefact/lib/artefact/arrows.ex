@@ -36,7 +36,8 @@ defmodule Artefact.Arrows do
     graph = %Artefact.Graph{nodes: nodes, relationships: relationships}
 
     %Artefact{
-      id: Keyword.get(opts, :id, generate_id()),
+      id: Keyword.get(opts, :id, Artefact.UUID.generate_v7()),
+      uuid: Keyword.get(opts, :uuid, Map.get(raw, "uuid", Artefact.UUID.generate_v7())),
       title: Keyword.get(opts, :title),
       style: Keyword.get(opts, :style),
       graph: graph,
@@ -45,10 +46,14 @@ defmodule Artefact.Arrows do
   end
 
   defp decode_node(raw) do
+    props = Map.get(raw, "properties", %{})
+    {uuid, props} = Map.pop(props, "uuid", Artefact.UUID.generate_v7())
+
     %Artefact.Node{
       id: raw["id"],
+      uuid: uuid,
       labels: Map.get(raw, "labels", []),
-      properties: Map.get(raw, "properties", %{}),
+      properties: props,
       position: decode_position(raw["position"])
     }
   end
@@ -68,8 +73,9 @@ defmodule Artefact.Arrows do
 
   # -- encode --
 
-  defp encode(%Artefact{graph: graph}) do
+  defp encode(%Artefact{uuid: uuid, graph: graph}) do
     %{
+      "uuid" => uuid,
       "style" => %{},
       "nodes" => Enum.map(graph.nodes, &encode_node/1),
       "relationships" => Enum.map(graph.relationships, &encode_relationship/1)
@@ -77,10 +83,12 @@ defmodule Artefact.Arrows do
   end
 
   defp encode_node(%Artefact.Node{} = node) do
+    props = Map.put(node.properties, "uuid", node.uuid)
+
     base = %{
       "id" => node.id,
       "labels" => node.labels,
-      "properties" => node.properties,
+      "properties" => props,
       "caption" => "",
       "style" => %{}
     }
@@ -102,11 +110,4 @@ defmodule Artefact.Arrows do
     }
   end
 
-  defp generate_id do
-    :crypto.strong_rand_bytes(16)
-    |> Base.encode16(case: :lower)
-    |> then(fn <<a::binary-size(8), b::binary-size(4), c::binary-size(4), d::binary-size(4), e::binary-size(12)>> ->
-      "#{a}-#{b}-#{c}-#{d}-#{e}"
-    end)
-  end
 end

@@ -1,3 +1,3 @@
-CREATE (n0:Agent:Me {name: 'Matt'}),
-       (n1:Agent:You {name: 'Claude'}),
+CREATE (n0:Agent:Me {name: 'Matt', uuid: '019da897-f2de-77ca-b5a4-40f0c3730943'}),
+       (n1:Agent:You {name: 'Claude', uuid: '019da897-f2de-768c-94e2-3005f2431f37'}),
        (n0)-[:US_TWO]->(n1)

@@ -1,0 +1,12 @@
+MERGE (n0 {uuid: '019da897-f2e0-70b5-afb2-358f45a80d34'})
+SET n0:Format:Canonical
+SET n0 += {name: 'Arrows JSON'}
+MERGE (n1 {uuid: '019da897-f2e0-74b2-ab91-4d68115d4f71'})
+SET n1:Struct
+SET n1 += {name: 'Artefact'}
+MERGE (n2 {uuid: '019da897-f2e0-71a9-95fb-48a9910ba67d'})
+SET n2:Format:Derived
+SET n2 += {name: 'Cypher'}
+MERGE (n0)-[:FROM_JSON]->(n1)
+MERGE (n1)-[:TO_JSON]->(n0)
+MERGE (n1)-[:EXPORT]->(n2)
