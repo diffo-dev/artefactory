@@ -31,13 +31,13 @@ defmodule Artefact do
   """
   defmacro new(attrs \\ []) do
     caller = __CALLER__.module
-    caller_name = caller |> Module.split() |> List.last()
+    caller_name = caller && (caller |> Module.split() |> List.last())
+    default_base_label = caller_name && String.replace(caller_name, ~r/[^A-Za-z0-9]/, "")
     quote do
       attrs      = unquote(attrs)
-      name       = unquote(caller_name)
-      title      = Keyword.get(attrs, :title, name)
-      base_label = Keyword.get(attrs, :base_label, name |> String.replace(~r/[^A-Za-z0-9]/, ""))
       metadata   = %{provenance: %{source: :struct, module: unquote(caller)}}
+      title      = Keyword.get(attrs, :title, unquote(caller_name))
+      base_label = Keyword.get(attrs, :base_label, unquote(default_base_label))
       Artefact.build([{:title, title}, {:base_label, base_label}, {:metadata, metadata} | Keyword.drop(attrs, [:title, :base_label, :metadata])])
     end
   end
@@ -158,7 +158,49 @@ defmodule Artefact do
 
   @doc false
   def build(attrs) do
+    {node_specs, attrs} = Keyword.pop(attrs, :nodes, [])
+    {rel_specs,  attrs} = Keyword.pop(attrs, :relationships, [])
+
+    attrs =
+      if node_specs != [] or rel_specs != [] do
+        Keyword.put(attrs, :graph, build_graph(node_specs, rel_specs))
+      else
+        attrs
+      end
+
     struct!(__MODULE__, [{:id, Artefact.UUID.generate_v7()}, {:uuid, Artefact.UUID.generate_v7()} | attrs])
+  end
+
+  defp build_graph(node_specs, rel_specs) do
+    {nodes, key_map} =
+      node_specs
+      |> Enum.with_index()
+      |> Enum.map_reduce(%{}, fn {{key, opts}, i}, acc ->
+        id   = "n#{i}"
+        node = %Artefact.Node{
+          id:         id,
+          uuid:       Keyword.get(opts, :uuid, Artefact.UUID.generate_v7()),
+          labels:     Keyword.get(opts, :labels, []),
+          properties: Keyword.get(opts, :properties, %{}),
+          position:   Keyword.get(opts, :position)
+        }
+        {node, Map.put(acc, key, id)}
+      end)
+
+    relationships =
+      rel_specs
+      |> Enum.with_index()
+      |> Enum.map(fn {spec, i} ->
+        %Artefact.Relationship{
+          id:         "r#{i}",
+          from_id:    Map.fetch!(key_map, Keyword.fetch!(spec, :from)),
+          to_id:      Map.fetch!(key_map, Keyword.fetch!(spec, :to)),
+          type:       Keyword.fetch!(spec, :type),
+          properties: Keyword.get(spec, :properties, %{})
+        }
+      end)
+
+    %Artefact.Graph{nodes: nodes, relationships: relationships}
   end
 
   defp deduplicate_rels(rels_a, rels_b) do
