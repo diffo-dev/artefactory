@@ -4,6 +4,7 @@
 **/deps/
 **/doc/
 
+
 # If the VM crashes, it generates a dump, let's ignore it too.
 erl_crash.dump
 
@@ -12,6 +13,9 @@ erl_crash.dump
 
 # Ignore package tarball (built via "mix hex.build").
 artefactory-*.tar
+
+# AI Guidance
+/.claude
 
 # Temporary files, for example, from tests.
 /tmp/

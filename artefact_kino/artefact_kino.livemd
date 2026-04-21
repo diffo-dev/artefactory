@@ -1,9 +1,14 @@
+<!--
+SPDX-FileCopyrightText: 2026 diffo-dev
+SPDX-License-Identifier: MIT
+-->
+
 # ArtefactKino
 
 ```elixir
 Mix.install([
-  {:artefact_kino, path: "/Users/beanlanda/git/artefactory/artefact_kino"},
-  {:artefact, path: "/Users/beanlanda/git/artefactory/artefact"}
+  {:artefact_kino, "~> 0.1"},
+  {:req, "~> 0.5"}
 ])
 ```
 
@@ -31,8 +36,7 @@ Try highlighting nodes and relationships in the graph. Explore the Artefact stru
 
 ```elixir
 us_two =
-  Path.join([__DIR__, "../artefact/test/data/us_two/arrows.json"])
-  |> File.read!()
+  Req.get!("https://raw.githubusercontent.com/diffo-dev/artefactory/dev/artefact/test/data/us_two/arrows.json", decode_body: false).body
   |> Artefact.Arrows.from_json!()
 
 ArtefactKino.new(us_two)
@@ -44,8 +48,7 @@ The Harmonising Artefact memorialises concepts involved in combining knowledge. 
 
 ```elixir
 artefact =
-  Path.join([__DIR__, "../artefact/test/data/artefact_harmonise/arrows.json"])
-  |> File.read!()
+  Req.get!("https://raw.githubusercontent.com/diffo-dev/artefactory/dev/artefact/test/data/artefact_harmonise/arrows.json", decode_body: false).body
   |> Artefact.Arrows.from_json!()
 
 ArtefactKino.new(artefact)
@@ -56,14 +59,14 @@ ArtefactKino.new(artefact)
 ```elixir
 require Artefact
 
+base_url = "https://raw.githubusercontent.com/diffo-dev/artefactory/dev/artefact/test/data"
+
 artefact =
-  Path.join([__DIR__, "../artefact/test/data/artefact/arrows.json"])
-  |> File.read!()
+  Req.get!("#{base_url}/artefact/arrows.json", decode_body: false).body
   |> Artefact.Arrows.from_json!()
 
 create_merge =
-  Path.join([__DIR__, "../artefact/test/data/create_merge/arrows.json"])
-  |> File.read!()
+  Req.get!("#{base_url}/create_merge/arrows.json", decode_body: false).body
   |> Artefact.Arrows.from_json!()
 
 {:ok, bindings} = Artefact.Binding.find(artefact, create_merge)

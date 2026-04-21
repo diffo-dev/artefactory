@@ -1,0 +1,63 @@
+# SPDX-FileCopyrightText: 2026 diffo-dev
+# SPDX-License-Identifier: MIT
+
+name: CI
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+    branches: [dev]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  reuse:
+    name: REUSE compliance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: fsfe/reuse-action@v4
+
+  test:
+    name: Tests (Elixir ${{ matrix.elixir }} / OTP ${{ matrix.otp }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - elixir: "1.19"
+            otp: "28"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ matrix.elixir }}
+          otp-version: ${{ matrix.otp }}
+
+      - name: Cache deps (artefact)
+        uses: actions/cache@v4
+        with:
+          path: artefact/deps
+          key: deps-artefact-${{ matrix.elixir }}-${{ matrix.otp }}-${{ hashFiles('artefact/mix.lock') }}
+          restore-keys: deps-artefact-${{ matrix.elixir }}-${{ matrix.otp }}-
+
+      - name: Cache deps (artefact_kino)
+        uses: actions/cache@v4
+        with:
+          path: artefact_kino/deps
+          key: deps-artefact_kino-${{ matrix.elixir }}-${{ matrix.otp }}-${{ hashFiles('artefact_kino/mix.lock') }}
+          restore-keys: deps-artefact_kino-${{ matrix.elixir }}-${{ matrix.otp }}-
+
+      - name: Test artefact
+        working-directory: artefact
+        env:
+          MIX_ENV: test
+        run: mix do deps.get + test
+
+      - name: Test artefact_kino
+        working-directory: artefact_kino
+        env:
+          MIX_ENV: test
+        run: mix do deps.get + test

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 diffo-dev
+# SPDX-License-Identifier: MIT
+
 version = 1
 
 # Mix lockfiles — generated, no inline header possible
