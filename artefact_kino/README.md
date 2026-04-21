@@ -1,5 +1,11 @@
 # ArtefactKino
 
+[![Module Version](https://img.shields.io/hexpm/v/artefact_kino)](https://hex.pm/packages/artefact_kino)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-lightgreen)](https://hexdocs.pm/artefact_kino/)
+[![License](https://img.shields.io/hexpm/l/artefact_kino)](https://github.com/diffo-dev/artefactory/blob/dev/LICENSES/MIT.txt)
+[![REUSE status](https://api.reuse.software/badge/github.com/diffo-dev/artefactory)](https://api.reuse.software/info/github.com/diffo-dev/artefactory)
+[![Run in Livebook](https://livebook.dev/badge/v1/blue.svg)](https://livebook.dev/run?url=https%3A%2F%2Fgithub.com%2Fdiffo-dev%2Fartefactory%2Fblob%2Fdev%2Fartefact_kino%2Fartefact_kino.livemd)
+
 A Livebook Kino widget for viewing [`Artefact`](https://hex.pm/packages/artefact) knowledge graph fragments.
 
 ArtefactKino is a viewer, not an editor. It renders three panels side by side:

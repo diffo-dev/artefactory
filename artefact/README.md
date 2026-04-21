@@ -1,5 +1,11 @@
 # Artefact
 
+[![Module Version](https://img.shields.io/hexpm/v/artefact)](https://hex.pm/packages/artefact)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-lightgreen)](https://hexdocs.pm/artefact/)
+[![License](https://img.shields.io/hexpm/l/artefact)](https://github.com/diffo-dev/artefactory/blob/dev/LICENSES/MIT.txt)
+[![REUSE status](https://api.reuse.software/badge/github.com/diffo-dev/artefactory)](https://api.reuse.software/info/github.com/diffo-dev/artefactory)
+[![Run in Livebook](https://livebook.dev/badge/v1/blue.svg)](https://livebook.dev/run?url=https%3A%2F%2Fgithub.com%2Fdiffo-dev%2Fartefactory%2Fblob%2Fdev%2Fartefact_kino%2Fartefact_kino.livemd)
+
 Artefacts (note the Australian spelling) are made objects. In an Artefactory they represent a fragment of knowledge — typically abstract, insightful, contextual.
 
 An `%Artefact{}` is a small, self-contained property graph: nodes with labels and properties, connected by typed directed relationships. The canonical form is the Elixir struct. Arrows JSON and Cypher are derived representations — JSON for interchange and visual editing with [Arrows.app](https://arrows.app), Cypher for persistence in Neo4j.
