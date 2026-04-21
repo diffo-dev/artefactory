@@ -35,8 +35,21 @@ I've drawn it, so from my perspective (Matt - Me) I've got an US_TWO relationshi
 Try highlighting nodes and relationships in the graph. Explore the Artefact struct, and have examine the create and merge cypher.
 
 ```elixir
+require Artefact
 
-
+us_two = Artefact.new(
+  title: "UsTwo",
+  base_label: "UsTwo",
+  nodes: [
+    matt:   [labels: ["Agent", "Me"],  properties: %{"name" => "Matt"},
+             uuid: "019da897-f2de-77ca-b5a4-40f0c3730943"],
+    claude: [labels: ["Agent", "You"], properties: %{"name" => "Claude"},
+             uuid: "019da897-f2de-768c-94e2-3005f2431f37"]
+  ],
+  relationships: [
+    [from: :matt, type: "US_TWO", to: :claude]
+  ]
+)
 
 ArtefactKino.new(us_two)
 ```
