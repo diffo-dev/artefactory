@@ -244,6 +244,14 @@ defmodule ArtefactTest do
       assert from_uuid.(s, sr.from_id) == from_uuid.(j, jr.from_id)
       assert from_uuid.(s, sr.to_id)   == from_uuid.(j, jr.to_id)
     end
+
+    test "inline build has :struct provenance", %{from_struct: s} do
+      assert %{provenance: %{source: :struct, module: ArtefactTest}} = s.metadata
+    end
+
+    test "json build has :arrows_json provenance", %{from_json: j} do
+      assert %{provenance: %{source: :arrows_json}} = j.metadata
+    end
   end
 
   describe "Artefact.Arrows.from_json!/2 — us_two" do
