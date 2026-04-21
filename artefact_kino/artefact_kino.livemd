@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2026 diffo-dev
+SPDX-FileCopyrightText: 2026 artefactory contributors <https://github.com/diffo-dev/artefactory/graphs/contributors>
 SPDX-License-Identifier: MIT
 -->
 

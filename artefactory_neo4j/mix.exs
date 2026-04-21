@@ -1,23 +1,24 @@
 # SPDX-FileCopyrightText: 2026 artefactory contributors <https://github.com/diffo-dev/artefactory/graphs/contributors>
 # SPDX-License-Identifier: MIT
 
-defmodule ArtefactKino.MixProject do
+defmodule ArtefactoryNeo4j.MixProject do
   @moduledoc false
   use Mix.Project
 
-  @version "0.1.2"
+  @version "0.1.0"
   @github_url "https://github.com/diffo-dev/artefactory"
 
   def project do
     [
-      app: :artefact_kino,
+      app: :artefactory_neo4j,
       version: @version,
       elixir: "~> 1.16",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),
-      name: "ArtefactKino",
-      description: "Livebook Kino widget for rendering Artefactory knowledge graph fragments (Artefacts)",
+      name: "ArtefactoryNeo4j",
+      description:
+        "Neo4j persistence for Artefacts — read, write, and database lifecycle via Bolty and DozerDB",
       source_url: @github_url,
       docs: docs()
     ]
@@ -30,7 +31,7 @@ defmodule ArtefactKino.MixProject do
   defp deps do
     [
       {:artefact, "~> 0.1"},
-      {:kino, "~> 0.14"},
+      {:bolty, "~> 0.0.9"},
       {:ex_doc, "~> 0.37", only: [:dev, :test], runtime: false}
     ]
   end
@@ -45,7 +46,7 @@ defmodule ArtefactKino.MixProject do
 
   defp docs do
     [
-      main: "ArtefactKino",
+      main: "ArtefactoryNeo4j",
       source_url: @github_url,
       source_ref: "v#{@version}",
       extras: ["README.md", "CHANGELOG.md"]

@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 2026 artefactory contributors <https://github.com/diffo-dev/artefactory/graphs/contributors>
+# SPDX-License-Identifier: MIT
+
+services:
+  artefactory:
+    image: graphstack/dozerdb:5.26.3.0
+    container_name: artefactory
+    ports:
+      - "7474:7474"   # Browser / HTTP API
+      - "7473:7473"   # Browser / HTTPS API
+      - "7470:7687"   # Bolt direct (bolt://) — no routing
+      - "7471:7688"   # Bolt with routing (neo4j://)
+    environment:
+      NEO4J_AUTH: "neo4j/${NEO4J_PASSWORD}"
+      NEO4J_PLUGINS: "[]"
+      NEO4J_dbms_security_auth__enabled: "true"
+    volumes:
+      - artefactory_data:/data
+      - artefactory_logs:/logs
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7474"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  artefactory_data:
+  artefactory_logs:

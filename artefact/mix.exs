@@ -1,11 +1,11 @@
-# SPDX-FileCopyrightText: 2026 diffo-dev
+# SPDX-FileCopyrightText: 2026 artefactory contributors <https://github.com/diffo-dev/artefactory/graphs/contributors>
 # SPDX-License-Identifier: MIT
 
 defmodule Artefact.MixProject do
   @moduledoc false
   use Mix.Project
 
-  @version "0.1.1"
+  @version "0.1.2"
   @github_url "https://github.com/diffo-dev/artefactory"
 
   def project do
@@ -37,7 +37,7 @@ defmodule Artefact.MixProject do
   defp package do
     [
       licenses: ["MIT"],
-      files: ~w(lib .formatter.exs mix.exs README* LICENSES),
+      files: ~w(lib .formatter.exs mix.exs README* CHANGELOG* LICENSES),
       links: %{"GitHub" => @github_url}
     ]
   end
@@ -46,7 +46,8 @@ defmodule Artefact.MixProject do
     [
       main: "Artefact",
       source_url: @github_url,
-      source_ref: "v#{@version}"
+      source_ref: "v#{@version}",
+      extras: ["README.md", "CHANGELOG.md"]
     ]
   end
 end
