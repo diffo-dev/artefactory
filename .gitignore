@@ -1,0 +1,21 @@
+# Mix build artifacts and dependencies — all levels
+**/_build/
+**/cover/
+**/deps/
+**/doc/
+
+# If the VM crashes, it generates a dump, let's ignore it too.
+erl_crash.dump
+
+# Also ignore archive artifacts (built via "mix archive.build").
+*.ez
+
+# Ignore package tarball (built via "mix hex.build").
+artefactory-*.tar
+
+# Temporary files, for example, from tests.
+/tmp/
+
+/.elixir_ls
+
+.DS_Store
