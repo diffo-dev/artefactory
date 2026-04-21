@@ -1,25 +1,32 @@
-# SPDX-FileCopyrightText: 2026 diffo-dev
+# SPDX-FileCopyrightText: 2026 artefactory contributors <https://github.com/diffo-dev/artefactory/graphs/contributors>
 # SPDX-License-Identifier: MIT
 
 version = 1
 
 # Mix lockfiles — generated, no inline header possible
 [[annotations]]
-path = ["artefact/mix.lock", "artefact_kino/mix.lock"]
+path = ["artefact/mix.lock", "artefact_kino/mix.lock", "artefactory_neo4j/mix.lock"]
 precedence = "aggregate"
-SPDX-FileCopyrightText = "2026 diffo-dev"
+SPDX-FileCopyrightText = "2026 artefactory contributors <https://github.com/diffo-dev/artefactory/graphs/contributors>"
 SPDX-License-Identifier = "MIT"
 
 # Test fixture data — binary/data files that cannot carry inline SPDX headers
 [[annotations]]
 path = ["artefact/test/data/**", "artefact_kino/test/data/**"]
 precedence = "aggregate"
-SPDX-FileCopyrightText = "2026 diffo-dev"
+SPDX-FileCopyrightText = "2026 artefactory contributors <https://github.com/diffo-dev/artefactory/graphs/contributors>"
 SPDX-License-Identifier = "MIT"
 
 # Logos
 [[annotations]]
 path = ["logos/**"]
 precedence = "aggregate"
-SPDX-FileCopyrightText = "2026 diffo-dev"
+SPDX-FileCopyrightText = "2026 artefactory contributors <https://github.com/diffo-dev/artefactory/graphs/contributors>"
+SPDX-License-Identifier = "MIT"
+
+# Dev environment config and generated files — no inline SPDX header possible
+[[annotations]]
+path = [".env.example", ".reuseignore", "artefactory_neo4j/CHANGELOG.md"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 artefactory contributors <https://github.com/diffo-dev/artefactory/graphs/contributors>"
 SPDX-License-Identifier = "MIT"

@@ -23,3 +23,6 @@ artefactory-*.tar
 /.elixir_ls
 
 .DS_Store
+
+# Local dev secrets
+.env

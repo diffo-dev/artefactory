@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: 2026 diffo-dev
+SPDX-FileCopyrightText: 2026 2026 artefactory contributors <https://github.com/diffo-dev/artefactory/graphs/contributors>
 SPDX-License-Identifier: MIT
 -->
 
@@ -71,15 +71,11 @@ Our creole words so far:
 - **us-two** — a word with no translation; the specific irreducible
   relationship between two participants
 
-### us_two (the library — not yet built)
+### us_two (the library — in `2026 artefactory contributors <https://github.com/diffo-dev/artefactory/graphs/contributors>/us_two`)
 
 `us_two` is an independent Elixir/Spark DSL protocol library.
-It will depend on `artefact`. Diffo will depend on `us_two`.
-
-The protocol is not Diffo-specific. Any two agents — any system,
-any relationship — may declare it.
-
-**Do not build `us_two` yet.** It comes after `artefact` is solid.
+It lives in its own repo (`us_two`) and depends on `artefact` and
+`artefactory_neo4j` (optional, for persistence). It is not in this repo.
 
 ---
 
@@ -110,15 +106,17 @@ The lexicon is expressed as an artefact: `artefact/test/data/artefactory/arrows.
 
 ## Artefactory — what we are building now
 
-`artefactory` is a monorepo at `diffo-dev/artefactory` containing:
+`artefactory` is a monorepo at `2026 artefactory contributors <https://github.com/diffo-dev/artefactory/graphs/contributors>/artefactory` containing:
 
 ```
-artefactory/          ← repo root (the universe that holds them)
-  artefact/           → hex.pm/packages/artefact
-  artefact_kino/      → hex.pm/packages/artefact_kino
+artefactory/              ← repo root (the universe that holds them)
+  artefact/               → hex.pm/packages/artefact
+  artefact_kino/          → hex.pm/packages/artefact_kino
+  artefactory_neo4j/      → hex.pm/packages/artefactory_neo4j
+  docker-compose.yml      ← local DozerDB dev instance
 ```
 
-### Repo structure — two independent Mix projects, no umbrella
+### Repo structure — independent Mix projects, no umbrella
 
 Each package has its own `mix.exs`, `deps/`, `_build/`, and tests.
 They are not an Elixir umbrella app. There is no root-level `mix.exs`.
@@ -126,13 +124,14 @@ They are not an Elixir umbrella app. There is no root-level `mix.exs`.
 Work in each package independently:
 
 ```sh
-cd artefact      && mix test
-cd artefact_kino && mix test
+cd artefact           && mix test
+cd artefact_kino      && mix test
+cd artefactory_neo4j  && mix test
 ```
 
-`artefact_kino` references `artefact` via a local path dep during
-development (`path: "../artefact"`). When published to hex.pm they
-become normal version deps.
+`artefact_kino` and `artefactory_neo4j` reference `artefact` via a local
+path dep during development (`path: "../artefact"`). When published to
+hex.pm they become normal version deps.
 
 **`artefact_kino` is currently a placeholder.** The `mix.exs`,
 `lib/artefact_kino.ex` (stub with moduledoc), and `test/test_helper.exs`
@@ -155,6 +154,42 @@ Everything else is derived from it:
 Artefacts are fragments, not complete models. One concept at a time.
 You see country from the clouds first — one landmark — then descend
 when you need detail.
+
+### Artefacts as pictures and artefacts as mechanical toys
+
+Currently an artefact is a **picture** — a point-in-time knowledge fragment,
+passed around, harmonised, and persisted. It has no behaviour of its own.
+
+An artefact could also be a **mechanical toy** — it has behaviour built in,
+but not agency. The distinction is important:
+
+- A mechanical toy **acts** but does not **think**. It is stimulus-response,
+  like a module function. `artefact.ask(:who_are_you)` consults the knowledge
+  baked in at the moment the artefact was made and returns an answer.
+- The knowledge is **point-in-time**. The response is deterministic given
+  that knowledge. Nothing about the artefact changes as a result of being asked.
+- The artefact does **not adapt**. Adaptation belongs to the agent holding it.
+  The artefact is the product of adaptation, not a participant in it.
+
+The technical shape: a struct with named functions that pattern-match on
+their own frozen data. Pure function over frozen state. No process, no
+mailbox, no side effects. The artefact is the closure — knowledge captured
+at a moment, behaviour defined by whoever made it.
+
+The maker's intent is encoded as mechanism. The artefact can have a
+`persist/1` function but cannot decide *when* to persist. It can render
+itself but cannot decide *who* to show itself to. The deciding stays with
+the agent.
+
+**A possible future direction**: `artefactory` could provide a rich Spark DSL
+for building artefacts that carry methods — functions that demonstrate,
+explain, or query their own encapsulated knowledge. A compiled artefact
+module (not just a runtime `%Artefact{}` struct) would have Spark transformers
+inject those methods at compile time, making the artefact introspectable and
+self-demonstrating. This is distinct from `%Artefact{}` as it exists today —
+it would be a new kind of thing, built in artefactory country.
+
+Do not build this yet. Hold it as the direction `artefactory` could grow toward.
 
 ### artefact — the core library
 
@@ -273,15 +308,92 @@ Style reference on `%Artefact{}` drives future render styles:
 - `:arrows_default` — faithful to arrows.app colours
 - `nil` — default (arrows_default)
 
+### artefactory_neo4j — Neo4j persistence implementation
+
+Depends on `artefact` + `bolty`. No Kino, no Livebook, no us_two concepts.
+
+This is the **artefactory implementation for Neo4j** — an adapter that
+persists `%Artefact{}` structs into a Neo4j graph database. It uses:
+
+- **Bolty** — Bolt-protocol driver for Neo4j (hex.pm/packages/bolty, supports Bolt 5.4)
+- **DozerDB** — open-source plugin for Neo4j Community 5.26.3 that unlocks
+  enterprise multi-database features (CREATE/DROP/STOP/START DATABASE)
+
+#### Naming convention
+
+`artefactory_*` packages are **artefactory implementations** — adapters
+that connect the artefact universe to a specific persistence or rendering
+backend. The same pattern will be used for future backends (e.g.
+`artefactory_ecto`). The backend name comes second, in artefactory country.
+
+#### Key design: one database per entity
+
+Each entity (Me, a Mob, a native You) gets its own **named Neo4j database**.
+All entities share a single Bolt connection, with the `db:` option routing
+each query to the correct database:
+
+```elixir
+{:ok, conn} = ArtefactoryNeo4j.connect(
+  url: "bolt://localhost:7688",
+  username: "neo4j",
+  password: System.get_env("NEO4J_PASSWORD")
+)
+
+:ok = ArtefactoryNeo4j.create_database(conn, "matt_me")
+:ok = ArtefactoryNeo4j.write(conn, me_artefact, db: "matt_me")
+
+:ok = ArtefactoryNeo4j.create_database(conn, "diffo_mob")
+:ok = ArtefactoryNeo4j.write(conn, mob_artefact, db: "diffo_mob")
+```
+
+#### Key modules
+
+- `ArtefactoryNeo4j` — `connect/1`, `write/3`, `fetch/3`,
+  `create_database/2`, `drop_database/2`, `stop_database/2`, `start_database/2`
+- `ArtefactoryNeo4j.Connection` — supervised GenServer wrapping a Bolty
+  connection; name-registered, restarts on crash
+
+#### Local dev — DozerDB via Docker
+
+```sh
+cd artefactory
+cp .env.example .env   # set NEO4J_PASSWORD
+docker compose up -d
+```
+
+The DozerDB container (`artefactory`) maps:
+- `7474` → Neo4j Browser / HTTP (use Chrome or Firefox — Safari blocks the unencrypted Bolt WebSocket)
+- `7473` → Neo4j Browser / HTTPS (Safari-compatible, accept the self-signed cert warning)
+- `7470` → Bolt direct (`bolt://`) — use this for Bolty and the Neo4j Browser connection URL
+- `7471` → Bolt with routing (`neo4j://`) — exposed but not used by artefactory_neo4j
+
+When connecting via the Neo4j Browser UI, set the connection URL to `bolt://localhost:7470`
+(the browser defaults to 7687 — you must override it).
+
+`docker-compose.yml` and `.env.example` live at the repo root.
+Never commit `.env` — it is in `.gitignore`.
+
+#### Database lifecycle (DozerDB-only features)
+
+These commands use the `system` database and require DozerDB.
+They will fail on plain Neo4j Community:
+
+```cypher
+CREATE DATABASE name IF NOT EXISTS
+DROP DATABASE name IF EXISTS
+STOP DATABASE name
+START DATABASE name
+```
+
 ### REUSE compliance
 
 All files carry SPDX headers:
 ```elixir
-# SPDX-FileCopyrightText: 2026 diffo-dev
+# SPDX-FileCopyrightText: 2026 2026 artefactory contributors <https://github.com/diffo-dev/artefactory/graphs/contributors>
 # SPDX-License-Identifier: MIT
 ```
 
-Licence text in `LICENSES/MIT.txt`. Copyright holder: `diffo-dev`.
+Licence text in `LICENSES/MIT.txt`. Copyright holder: `2026 artefactory contributors <https://github.com/diffo-dev/artefactory/graphs/contributors>`.
 
 ---
 
@@ -290,7 +402,9 @@ Licence text in `LICENSES/MIT.txt`. Copyright holder: `diffo-dev`.
 - **Spelling**: `artefact` not `artifact` — British/Australian spelling,
   and culturally distinct from build artifacts
 - **Repo name**: `artefactory` — the universe that holds artefacts and the practice of making them
-- **Package names**: `artefact`, `artefact_kino` — the things themselves, not the universe
+- **Package names**:
+  - `artefact`, `artefact_kino` — the things themselves
+  - `artefactory_*` — artefactory implementations (backend adapters); backend name comes second, in artefactory country
 - **Licence**: MIT throughout, matching the rest of Diffo
 - **Elixir version**: `~> 1.16`
 - **Only runtime dep in `artefact`**: `jason ~> 1.4`
@@ -300,11 +414,12 @@ Licence text in `LICENSES/MIT.txt`. Copyright holder: `diffo-dev`.
 ## What comes next
 
 1. `artefact` tests passing — `mix test` in `artefact/` ✓
-2. Verify `artefact_kino` renders in Livebook — open `notebooks/demo.livemd`
-3. Check vis-network CDN import works in Kino.JS context
+2. `artefactory_neo4j` — wire up live connection tests against DozerDB ✓ (in progress)
+3. Publish `artefactory_neo4j 0.1.0` to hex.pm
+4. Publish updated `artefact` (with improved `Artefact.new`) to hex.pm — currently blocked by hex `:timeout` on `--replace`; bump to `0.1.2` and publish fresh
+5. Verify `artefact_kino` renders in Livebook — open `notebooks/demo.livemd`
+6. Check vis-network CDN import works in Kino.JS context
    (may need `ctx.importJS` instead of ES module `import`)
-4. Push `artefactory` to `github.com/diffo-dev/artefactory`
-5. Eventually: build `us_two` as a separate library depending on `artefact`
 
 ---
 
