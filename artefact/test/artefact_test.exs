@@ -68,6 +68,184 @@ defmodule ArtefactTest do
     end
   end
 
+  describe "Artefact.new/1 — inline nodes and relationships" do
+    test "builds nodes with sequential ids" do
+      a = Artefact.new(
+        nodes: [
+          matt:   [labels: ["Agent", "Me"],  properties: %{"name" => "Matt"}],
+          claude: [labels: ["Agent", "You"], properties: %{"name" => "Claude"}]
+        ],
+        relationships: []
+      )
+      by_id = Map.new(a.graph.nodes, &{&1.id, &1})
+      assert map_size(by_id) == 2
+      assert Map.has_key?(by_id, "n0")
+      assert Map.has_key?(by_id, "n1")
+    end
+
+    test "nodes have correct labels and properties" do
+      a = Artefact.new(
+        nodes: [
+          matt:   [labels: ["Agent", "Me"],  properties: %{"name" => "Matt"}],
+          claude: [labels: ["Agent", "You"], properties: %{"name" => "Claude"}]
+        ],
+        relationships: []
+      )
+      by_id = Map.new(a.graph.nodes, &{&1.id, &1})
+      assert by_id["n0"].labels == ["Agent", "Me"]
+      assert by_id["n0"].properties == %{"name" => "Matt"}
+      assert by_id["n1"].labels == ["Agent", "You"]
+      assert by_id["n1"].properties == %{"name" => "Claude"}
+    end
+
+    test "nodes get auto-generated uuids" do
+      a = Artefact.new(nodes: [n: [labels: ["X"]]], relationships: [])
+      [node] = a.graph.nodes
+      assert is_binary(node.uuid)
+      assert String.length(node.uuid) == 36
+    end
+
+    test "uuid option is preserved" do
+      fixed_uuid = "019da897-f2de-77ca-b5a4-40f0c3730943"
+      a = Artefact.new(nodes: [n: [labels: [], uuid: fixed_uuid]], relationships: [])
+      [node] = a.graph.nodes
+      assert node.uuid == fixed_uuid
+    end
+
+    test "builds relationship resolving atom keys to ids" do
+      a = Artefact.new(
+        nodes: [
+          matt:   [labels: ["Agent"]],
+          claude: [labels: ["Agent"]]
+        ],
+        relationships: [
+          [from: :matt, type: "US_TWO", to: :claude]
+        ]
+      )
+      [rel] = a.graph.relationships
+      assert rel.from_id == "n0"
+      assert rel.to_id   == "n1"
+      assert rel.type    == "US_TWO"
+    end
+
+    test "relationship properties default to empty map" do
+      a = Artefact.new(
+        nodes: [a: [labels: []], b: [labels: []]],
+        relationships: [[from: :a, type: "KNOWS", to: :b]]
+      )
+      [rel] = a.graph.relationships
+      assert rel.properties == %{}
+    end
+
+    test "relationship properties are set when provided" do
+      a = Artefact.new(
+        nodes: [a: [labels: []], b: [labels: []]],
+        relationships: [[from: :a, type: "KNOWS", to: :b, properties: %{"since" => "2024"}]]
+      )
+      [rel] = a.graph.relationships
+      assert rel.properties == %{"since" => "2024"}
+    end
+
+    test "empty nodes and relationships produces empty graph" do
+      a = Artefact.new(title: "Empty", nodes: [], relationships: [])
+      assert a.graph.nodes == []
+      assert a.graph.relationships == []
+    end
+
+    test "no nodes or relationships key leaves graph as default" do
+      a = Artefact.new(title: "NoGraph")
+      assert a.graph == %Artefact.Graph{}
+    end
+  end
+
+  describe "Artefact.new/1 — inline nodes and relationships — multiple relationships" do
+    setup do
+      a = Artefact.new(
+        nodes: [x: [labels: ["X"]], y: [labels: ["Y"]], z: [labels: ["Z"]]],
+        relationships: [
+          [from: :x, type: "NEXT", to: :y],
+          [from: :y, type: "NEXT", to: :z]
+        ]
+      )
+      %{artefact: a}
+    end
+
+    test "all relationships built", %{artefact: a} do
+      assert length(a.graph.relationships) == 2
+    end
+
+    test "relationship ids are sequential", %{artefact: a} do
+      ids = Enum.map(a.graph.relationships, & &1.id)
+      assert ids == ["r0", "r1"]
+    end
+
+    test "chain resolves correctly", %{artefact: a} do
+      by_id = Map.new(a.graph.nodes, &{&1.id, &1})
+      [r0, r1] = a.graph.relationships
+      assert r0.from_id == "n0" and r0.to_id == "n1"
+      assert r1.from_id == "n1" and r1.to_id == "n2"
+      assert by_id["n0"].labels == ["X"]
+      assert by_id["n2"].labels == ["Z"]
+    end
+  end
+
+  describe "Artefact.new/1 — us_two inline vs JSON fixture" do
+    setup do
+      json = File.read!(Path.join([@fixtures, "us_two", "arrows.json"]))
+      from_json = Artefact.Arrows.from_json!(json)
+
+      from_struct = Artefact.new(
+        title: "UsTwo",
+        base_label: "UsTwo",
+        nodes: [
+          matt:   [labels: ["Agent", "Me"],  properties: %{"name" => "Matt"},
+                   uuid: "019da897-f2de-77ca-b5a4-40f0c3730943"],
+          claude: [labels: ["Agent", "You"], properties: %{"name" => "Claude"},
+                   uuid: "019da897-f2de-768c-94e2-3005f2431f37"]
+        ],
+        relationships: [
+          [from: :matt, type: "US_TWO", to: :claude]
+        ]
+      )
+
+      %{from_json: from_json, from_struct: from_struct}
+    end
+
+    test "same title and base_label", %{from_json: j, from_struct: s} do
+      assert s.title      == j.title
+      assert s.base_label == j.base_label
+    end
+
+    test "same number of nodes and relationships", %{from_json: j, from_struct: s} do
+      assert length(s.graph.nodes)         == length(j.graph.nodes)
+      assert length(s.graph.relationships) == length(j.graph.relationships)
+    end
+
+    test "node labels match", %{from_json: j, from_struct: s} do
+      labels = fn a -> a.graph.nodes |> Enum.map(& &1.labels) |> Enum.sort() end
+      assert labels.(s) == labels.(j)
+    end
+
+    test "node properties match", %{from_json: j, from_struct: s} do
+      props = fn a -> a.graph.nodes |> Enum.map(& &1.properties) |> Enum.sort_by(& &1["name"]) end
+      assert props.(s) == props.(j)
+    end
+
+    test "node uuids match", %{from_json: j, from_struct: s} do
+      uuids = fn a -> a.graph.nodes |> Enum.map(& &1.uuid) |> Enum.sort() end
+      assert uuids.(s) == uuids.(j)
+    end
+
+    test "relationship type and direction match", %{from_json: j, from_struct: s} do
+      [sr] = s.graph.relationships
+      [jr] = j.graph.relationships
+      assert sr.type == jr.type
+      from_uuid = fn a, rel_id -> Enum.find(a.graph.nodes, &(&1.id == rel_id)).uuid end
+      assert from_uuid.(s, sr.from_id) == from_uuid.(j, jr.from_id)
+      assert from_uuid.(s, sr.to_id)   == from_uuid.(j, jr.to_id)
+    end
+  end
+
   describe "Artefact.Arrows.from_json!/2 — us_two" do
     setup do
       json = File.read!(Path.join([@fixtures, "us_two", "arrows.json"]))

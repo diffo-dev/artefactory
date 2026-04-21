@@ -7,7 +7,7 @@ SPDX-License-Identifier: MIT
 
 ```elixir
 Mix.install([
-  {:artefact_kino, "~> 0.1"},
+  {:artefact_kino, "~> 0.1.1"},
   {:req, "~> 0.5"}
 ])
 ```
@@ -35,9 +35,8 @@ I've drawn it, so from my perspective (Matt - Me) I've got an US_TWO relationshi
 Try highlighting nodes and relationships in the graph. Explore the Artefact struct, and have examine the create and merge cypher.
 
 ```elixir
-us_two =
-  Req.get!("https://raw.githubusercontent.com/diffo-dev/artefactory/dev/artefact/test/data/us_two/arrows.json", decode_body: false).body
-  |> Artefact.Arrows.from_json!()
+
+
 
 ArtefactKino.new(us_two)
 ```
