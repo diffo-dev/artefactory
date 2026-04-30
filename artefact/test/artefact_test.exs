@@ -882,4 +882,97 @@ defmodule ArtefactTest do
       assert String.contains?(Artefact.Mermaid.export(a), "  accTitle: Sand Talk: a yarn")
     end
   end
+
+  describe "Artefact.new/1 — :description option" do
+    test "defaults to nil when not provided" do
+      a = Artefact.new()
+      assert a.description == nil
+    end
+
+    test "stores the description when provided" do
+      a = Artefact.new(description: "the simplest true thing about us_two")
+      assert a.description == "the simplest true thing about us_two"
+    end
+
+    test "description is independent of title" do
+      a = Artefact.new(title: "UsTwo", description: "Me toward You")
+      assert a.title == "UsTwo"
+      assert a.description == "Me toward You"
+    end
+  end
+
+  describe "Artefact.Arrows round-trip — description" do
+    test "preserves a set description" do
+      original =
+        Artefact.new(
+          title: "UsTwo",
+          description: "the simplest true thing",
+          base_label: "UsTwo",
+          nodes: [a: [labels: ["Agent"]]],
+          relationships: []
+        )
+
+      round_tripped = original |> Artefact.Arrows.to_json() |> Artefact.Arrows.from_json!()
+      assert round_tripped.description == "the simplest true thing"
+    end
+
+    test "preserves a nil description" do
+      original = Artefact.new(title: "Bare", nodes: [], relationships: [])
+      assert original.description == nil
+
+      round_tripped = original |> Artefact.Arrows.to_json() |> Artefact.Arrows.from_json!()
+      assert round_tripped.description == nil
+    end
+  end
+
+  describe "Artefact.Mermaid.export/2 — description" do
+    test "emits accDescr inline when description is single-line" do
+      a =
+        Artefact.new(
+          title: "UsTwo",
+          description: "Me toward You",
+          nodes: [],
+          relationships: []
+        )
+
+      assert String.contains?(Artefact.Mermaid.export(a), "  accDescr: Me toward You")
+    end
+
+    test "uses block form when description contains newlines" do
+      a =
+        Artefact.new(
+          title: "UsTwo",
+          description: "first line\nsecond line",
+          nodes: [],
+          relationships: []
+        )
+
+      mmd = Artefact.Mermaid.export(a)
+      assert String.contains?(mmd, "  accDescr {\n    first line\n    second line\n  }")
+      refute String.contains?(mmd, "accDescr:")
+    end
+
+    test "omits accDescr when description is nil" do
+      a = Artefact.new(title: "Titled but undescribed", nodes: [], relationships: [])
+      mmd = Artefact.Mermaid.export(a)
+      refute String.contains?(mmd, "accDescr")
+    end
+
+    test "accDescr appears after accTitle and before nodes" do
+      a =
+        Artefact.new(
+          title: "Order",
+          description: "matters",
+          nodes: [n: [labels: ["X"]]],
+          relationships: []
+        )
+
+      mmd = Artefact.Mermaid.export(a)
+      title_idx = :binary.match(mmd, "accTitle:") |> elem(0)
+      descr_idx = :binary.match(mmd, "accDescr:") |> elem(0)
+      node_idx = :binary.match(mmd, "n0((") |> elem(0)
+      assert title_idx < descr_idx
+      assert descr_idx < node_idx
+    end
+  end
 end
