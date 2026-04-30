@@ -7,7 +7,9 @@ SPDX-License-Identifier: MIT
 
 ```elixir
 Mix.install([
-  {:artefact_kino, "~> 0.1.1"},
+  #{:artefact_kino, "~> 0.1.2"},
+  {:artefact_kino, path: "/Users/beanlanda/git/artefactory/artefact_kino"},
+  {:artefact, path: "/Users/beanlanda/git/artefactory/artefact", override: true},
   {:req, "~> 0.5"}
 ])
 ```
