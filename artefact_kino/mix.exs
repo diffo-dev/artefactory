@@ -5,7 +5,7 @@ defmodule ArtefactKino.MixProject do
   @moduledoc false
   use Mix.Project
 
-  @version "0.1.2"
+  @version "0.1.3"
   @github_url "https://github.com/diffo-dev/artefactory"
 
   def project do
@@ -29,7 +29,7 @@ defmodule ArtefactKino.MixProject do
 
   defp deps do
     [
-      {:artefact, "~> 0.1"},
+      {:artefact, "~> 0.1.3"},
       {:kino, "~> 0.14"},
       {:ex_doc, "~> 0.37", only: [:dev, :test], runtime: false}
     ]

@@ -5,6 +5,13 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## 0.1.3 — 2026-04-30
+
+- `Artefact.Mermaid.export/2` — derives Mermaid `graph` source from an `%Artefact{}`, alongside `Artefact.Cypher` and `Artefact.Arrows`; nodes render as circles, `:direction` option for `:LR`, `:RL`, `:TB`, `:BT`, `:TD`
+- `:description` field on `%Artefact{}` — optional human-readable description, defaults to `nil`; accepted by `Artefact.new/1` and round-tripped through `Artefact.Arrows`
+- Mermaid front-matter `title:` (Mermaid 9.4+ heading) and body `accTitle:` derived from `artefact.title`; `accDescr:` derived from `artefact.description` (inline form for single-line, block form `accDescr { ... }` for multi-line)
+- `Artefact.combine/3` — pipeline-friendly convenience over `Artefact.Binding.find/2` + `Artefact.harmonise/4`; the heart flows through the pipe as the first argument, opts honour `:title`, `:base_label` and `:description` overrides; raises `MatchError` when no shared bindings exist
+
 ## 0.1.2 — 2026-04-21
 
 - Improved `Artefact.new/1` macro — nodes and relationships declared inline with atom keys and keyword options

@@ -975,4 +975,119 @@ defmodule ArtefactTest do
       assert descr_idx < node_idx
     end
   end
+
+  describe "Artefact.combine/3" do
+    @uuid_shared "019d0000-0000-7000-8000-000000000000"
+
+    defp combine_artefact(base_label, uuid) do
+      %Artefact{
+        id: Artefact.UUID.generate_v7(),
+        uuid: Artefact.UUID.generate_v7(),
+        title: base_label,
+        base_label: base_label,
+        style: nil,
+        metadata: %{},
+        graph: %Artefact.Graph{
+          nodes: [%Artefact.Node{id: "n0", uuid: uuid, labels: [], properties: %{}}],
+          relationships: []
+        }
+      }
+    end
+
+    test "combines two artefacts via auto-found bindings" do
+      heart = combine_artefact("Knowing", @uuid_shared)
+      other = combine_artefact("Valuing", @uuid_shared)
+
+      result = Artefact.combine(heart, other)
+      assert length(result.graph.nodes) == 1
+    end
+
+    test "default base_label is portmanteau of heart + other" do
+      heart = combine_artefact("Knowing", @uuid_shared)
+      other = combine_artefact("Valuing", @uuid_shared)
+
+      result = Artefact.combine(heart, other)
+      assert result.base_label == "KnowingValuing"
+    end
+
+    test "title defaults to base_label when not given" do
+      heart = combine_artefact("Knowing", @uuid_shared)
+      other = combine_artefact("Valuing", @uuid_shared)
+
+      result = Artefact.combine(heart, other)
+      assert result.title == "KnowingValuing"
+    end
+
+    test "description defaults to nil when not given" do
+      heart = combine_artefact("Knowing", @uuid_shared)
+      other = combine_artefact("Valuing", @uuid_shared)
+
+      result = Artefact.combine(heart, other)
+      assert result.description == nil
+    end
+
+    test "applies title override from opts" do
+      heart = combine_artefact("Knowing", @uuid_shared)
+      other = combine_artefact("Valuing", @uuid_shared)
+
+      result = Artefact.combine(heart, other, title: "Custom")
+      assert result.title == "Custom"
+    end
+
+    test "applies description override from opts" do
+      heart = combine_artefact("Knowing", @uuid_shared)
+      other = combine_artefact("Valuing", @uuid_shared)
+
+      result = Artefact.combine(heart, other, description: "yarned")
+      assert result.description == "yarned"
+    end
+
+    test "applies title and description together" do
+      heart = combine_artefact("Knowing", @uuid_shared)
+      other = combine_artefact("Valuing", @uuid_shared)
+
+      result = Artefact.combine(heart, other, title: "MeMind", description: "Mind of Me")
+      assert result.title == "MeMind"
+      assert result.description == "Mind of Me"
+    end
+
+    test "chains in a pipeline" do
+      a = combine_artefact("Knowing", @uuid_shared)
+      b = combine_artefact("Valuing", @uuid_shared)
+      c = combine_artefact("Being", @uuid_shared)
+
+      result = a |> Artefact.combine(b) |> Artefact.combine(c)
+      assert result.base_label == "KnowingValuingBeing"
+      assert length(result.graph.nodes) == 1
+    end
+
+    test "pipeline applies title and description on the final step" do
+      a = combine_artefact("Knowing", @uuid_shared)
+      b = combine_artefact("Valuing", @uuid_shared)
+      c = combine_artefact("Being", @uuid_shared)
+
+      result =
+        a
+        |> Artefact.combine(b)
+        |> Artefact.combine(c, title: "MeMind", description: "Mind of Me")
+
+      assert result.title == "MeMind"
+      assert result.description == "Mind of Me"
+    end
+
+    test "records :harmonised provenance with calling module" do
+      heart = combine_artefact("Knowing", @uuid_shared)
+      other = combine_artefact("Valuing", @uuid_shared)
+
+      result = Artefact.combine(heart, other)
+      assert %{provenance: %{source: :harmonised, module: ArtefactTest}} = result.metadata
+    end
+
+    test "raises when artefacts have no shared nodes" do
+      heart = combine_artefact("Knowing", "019d0000-0000-7000-8000-000000000010")
+      other = combine_artefact("Valuing", "019d0000-0000-7000-8000-000000000020")
+
+      assert_raise MatchError, fn -> Artefact.combine(heart, other) end
+    end
+  end
 end
