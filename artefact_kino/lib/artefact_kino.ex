@@ -5,9 +5,10 @@ defmodule ArtefactKino do
   @moduledoc """
   Livebook Kino widget for rendering `%Artefact{}` knowledge graphs.
 
-  Renders three panels: interactive vis-network graph (heartside), Cypher
-  fragment with CREATE/MERGE toggle, and a tabbed Elixir inspector showing
-  the artefact, nodes and relationships as tables.
+  Renders three panels: interactive vis-network graph (heartside), an export
+  panel toggling between CREATE / MERGE Cypher, Arrows JSON and Mermaid
+  source, and a tabbed Elixir inspector showing the artefact, nodes and
+  relationships as tables.
 
   ## Usage
 
@@ -35,8 +36,10 @@ defmodule ArtefactKino do
       create_cypher: Artefact.Cypher.create(artefact),
       merge_cypher:  Artefact.Cypher.merge(artefact),
       arrows_json:   Artefact.Arrows.to_json(artefact),
+      mermaid:       Artefact.Mermaid.export(artefact),
       default:       Atom.to_string(default),
       title:         artefact.title || artefact.base_label || "Artefact",
+      description:   artefact.description,
       artefact_rows: artefact_rows(artefact),
       nodes_rows:    nodes_rows(artefact),
       rels_rows:     rels_rows(artefact)
@@ -66,11 +69,12 @@ defmodule ArtefactKino do
 
   defp artefact_rows(%Artefact{} = a) do
     [
-      %{key: "id",         value: a.id},
-      %{key: "uuid",       value: a.uuid},
-      %{key: "title",      value: inspect(a.title)},
-      %{key: "base_label", value: inspect(a.base_label)},
-      %{key: "metadata",   value: inspect(a.metadata, pretty: true)}
+      %{key: "id",          value: a.id},
+      %{key: "uuid",        value: a.uuid},
+      %{key: "title",       value: inspect(a.title)},
+      %{key: "description", value: inspect(a.description)},
+      %{key: "base_label",  value: inspect(a.base_label)},
+      %{key: "metadata",    value: inspect(a.metadata, pretty: true)}
     ]
   end
 
@@ -185,10 +189,23 @@ defmodule ArtefactKino do
     export function init(ctx, data) {
       ctx.root.style.cssText = "font-family:monospace;background:#111;color:#e0e0e0;";
 
+      const escapeHtml = (s) => String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+
+      const headerHtml = `
+        <div style="padding:6px 8px;border-bottom:1px solid #333;">
+          <div style="font-size:13px;color:#aaa;">${escapeHtml(data.title)}</div>
+          ${data.description
+            ? `<div style="font-size:11px;color:#888;margin-top:2px;font-style:italic;white-space:pre-line;">${escapeHtml(data.description)}</div>`
+            : ""}
+        </div>`;
+
       ctx.root.innerHTML = `
-        <div style="padding:6px 8px;border-bottom:1px solid #333;font-size:13px;color:#aaa;">
-          ${data.title}
-        </div>
+        ${headerHtml}
         <div style="display:flex;height:560px;gap:0;">
 
           <!-- graph panel -->
@@ -217,6 +234,7 @@ defmodule ArtefactKino do
               <button class="cbtn" data-cypher="create">CREATE</button>
               <button class="cbtn" data-cypher="merge">MERGE</button>
               <button class="cbtn" data-cypher="json">JSON</button>
+              <button class="cbtn" data-cypher="mermaid">MERMAID</button>
               <button id="collapse-btn" title="Collapse" style="margin-left:auto;">◀</button>
             </div>
             <pre id="cypher" style="flex:1;overflow:auto;margin:0;padding:10px;font-size:11px;line-height:1.6;color:#e0e0e0;white-space:pre-wrap;cursor:text;"></pre>
@@ -239,9 +257,10 @@ defmodule ArtefactKino do
       const cypherBtns = ctx.root.querySelectorAll(".cbtn");
 
       function renderCypher() {
-        if (currentCypher === "create")      cypherEl.textContent = data.create_cypher;
-        else if (currentCypher === "merge")  cypherEl.textContent = data.merge_cypher;
-        else                                 cypherEl.textContent = data.arrows_json;
+        if (currentCypher === "create")        cypherEl.textContent = data.create_cypher;
+        else if (currentCypher === "merge")    cypherEl.textContent = data.merge_cypher;
+        else if (currentCypher === "mermaid")  cypherEl.textContent = data.mermaid;
+        else                                   cypherEl.textContent = data.arrows_json;
         cypherBtns.forEach(b => btnStyle(b, b.dataset.cypher === currentCypher));
       }
       cypherBtns.forEach(b => b.addEventListener("click", () => { currentCypher = b.dataset.cypher; renderCypher(); }));

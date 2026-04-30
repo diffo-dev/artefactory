@@ -5,7 +5,7 @@ defmodule ArtefactKino.MixProject do
   @moduledoc false
   use Mix.Project
 
-  @version "0.1.2"
+  @version "0.1.3"
   @github_url "https://github.com/diffo-dev/artefactory"
 
   def project do
@@ -29,10 +29,26 @@ defmodule ArtefactKino.MixProject do
 
   defp deps do
     [
-      {:artefact, "~> 0.1"},
+      artefact_dep(),
       {:kino, "~> 0.14"},
       {:ex_doc, "~> 0.37", only: [:dev, :test], runtime: false}
     ]
+  end
+
+  # Local path dep when running inside the monorepo, hex dep otherwise.
+  # `mix hex.publish` rejects path deps, so set HEX_PUBLISH=1 (or run from
+  # outside the repo) to force the hex form when shipping.
+  defp artefact_dep do
+    cond do
+      System.get_env("HEX_PUBLISH") == "1" ->
+        {:artefact, "~> 0.1.3"}
+
+      File.exists?(Path.join(__DIR__, "../artefact/mix.exs")) ->
+        {:artefact, path: "../artefact"}
+
+      true ->
+        {:artefact, "~> 0.1.3"}
+    end
   end
 
   defp package do

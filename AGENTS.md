@@ -197,11 +197,12 @@ Do not build this yet. Hold it as the direction `artefactory` could grow toward.
 
 ```elixir
 %Artefact{
-  id:       String.t(),          # generated UUID
-  title:    String.t() | nil,    # human label
-  style:    atom() | nil,        # render style reference — not persisted in graph
-  graph:    %Artefact.Graph{},   # the knowledge
-  metadata: map()                # open map — consumers add their own keys
+  id:          String.t(),          # generated UUID
+  title:       String.t() | nil,    # human label
+  description: String.t() | nil,    # human description — surfaced as Mermaid accDescr
+  style:       atom() | nil,        # render style reference — not persisted in graph
+  graph:       %Artefact.Graph{},   # the knowledge
+  metadata:    map()                # open map — consumers add their own keys
 }
 
 %Artefact.Graph{

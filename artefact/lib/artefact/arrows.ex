@@ -51,6 +51,7 @@ defmodule Artefact.Arrows do
       id: Keyword.get(opts, :id, Artefact.UUID.generate_v7()),
       uuid: Keyword.get(opts, :uuid, Map.get(raw, "uuid", Artefact.UUID.generate_v7())),
       title: Keyword.get(opts, :title, Map.get(raw, "title")),
+      description: Keyword.get(opts, :description, Map.get(raw, "description")),
       base_label: base_label,
       style: Keyword.get(opts, :style),
       graph: graph,
@@ -87,10 +88,11 @@ defmodule Artefact.Arrows do
 
   # -- encode --
 
-  defp encode(%Artefact{uuid: uuid, title: title, base_label: base_label, graph: graph}) do
+  defp encode(%Artefact{uuid: uuid, title: title, description: description, base_label: base_label, graph: graph}) do
     %{
       "uuid" => uuid,
       "title" => title,
+      "description" => description,
       "base_label" => base_label,
       "style" => %{},
       "nodes" => Enum.map(graph.nodes, &encode_node(&1, base_label)),

@@ -752,4 +752,342 @@ defmodule ArtefactTest do
       assert Artefact.Cypher.merge(a) == expected
     end
   end
+
+  describe "Artefact.Mermaid.export/2 — us_two" do
+    setup do
+      json = File.read!(Path.join([@fixtures, "us_two", "arrows.json"]))
+      %{artefact: Artefact.Arrows.from_json!(json)}
+    end
+
+    test "matches fixture", %{artefact: a} do
+      expected = File.read!(Path.join([@fixtures, "us_two", "mermaid.mmd"])) |> String.trim()
+      assert Artefact.Mermaid.export(a) == expected
+    end
+
+    test "uses `graph LR` by default", %{artefact: a} do
+      assert String.contains?(Artefact.Mermaid.export(a), "\ngraph LR\n")
+    end
+
+    test "respects :direction option", %{artefact: a} do
+      assert String.contains?(Artefact.Mermaid.export(a, direction: :TB), "\ngraph TB\n")
+    end
+
+    test "emits front-matter title from artefact.title", %{artefact: a} do
+      assert String.starts_with?(Artefact.Mermaid.export(a), "---\ntitle: UsTwo\n---\n")
+    end
+
+    test "emits accTitle mirroring the title", %{artefact: a} do
+      assert String.contains?(Artefact.Mermaid.export(a), "  accTitle: UsTwo\n")
+    end
+
+    test "raises on unknown direction", %{artefact: a} do
+      assert_raise ArgumentError, ~r/invalid :direction/, fn ->
+        Artefact.Mermaid.export(a, direction: :sideways)
+      end
+    end
+
+    test "renders node label as name + semantic labels in circle nodes", %{artefact: a} do
+      mmd = Artefact.Mermaid.export(a)
+      assert String.contains?(mmd, ~s|n0(("Matt<br/>Agent Me"))|)
+      assert String.contains?(mmd, ~s|n1(("Claude<br/>Agent You"))|)
+    end
+
+    test "drops base_label from per-node labels", %{artefact: a} do
+      mmd = Artefact.Mermaid.export(a)
+      refute String.contains?(mmd, "UsTwo<br")
+      refute String.contains?(mmd, " UsTwo\"")
+    end
+
+    test "renders relationship type between pipes", %{artefact: a} do
+      assert String.contains?(Artefact.Mermaid.export(a), "n0 -->|US_TWO| n1")
+    end
+  end
+
+  describe "Artefact.Mermaid.export/2 — escapes and edge cases" do
+    test "falls back to node id when no name property is present" do
+      a =
+        Artefact.new(
+          base_label: "Bare",
+          nodes: [n: [labels: ["X"]]],
+          relationships: []
+        )
+
+      assert String.contains?(Artefact.Mermaid.export(a), ~s|n0(("n0<br/>X"))|)
+    end
+
+    test "uses name only when no semantic labels remain" do
+      a =
+        Artefact.new(
+          base_label: "Solo",
+          nodes: [n: [labels: ["Solo"], properties: %{"name" => "alone"}]],
+          relationships: []
+        )
+
+      mmd = Artefact.Mermaid.export(a)
+      assert String.contains?(mmd, ~s|n0(("alone"))|)
+      refute String.contains?(mmd, "<br/>")
+    end
+
+    test "escapes double quotes in node names" do
+      a =
+        Artefact.new(
+          nodes: [q: [labels: [], properties: %{"name" => ~s|she said "hi"|}]],
+          relationships: []
+        )
+
+      assert String.contains?(Artefact.Mermaid.export(a), ~s|n0(("she said &quot;hi&quot;"))|)
+    end
+
+    test "escapes pipes in relationship type" do
+      a =
+        Artefact.new(
+          nodes: [a: [labels: []], b: [labels: []]],
+          relationships: [[from: :a, type: "HAS|PIPE", to: :b]]
+        )
+
+      assert String.contains?(Artefact.Mermaid.export(a), "-->|HAS&#124;PIPE|")
+    end
+
+    test "empty untitled graph still emits a header" do
+      a = Artefact.new(title: nil, nodes: [], relationships: [])
+      assert Artefact.Mermaid.export(a) == "graph LR"
+    end
+
+    test "untitled artefact omits front-matter and accTitle" do
+      a =
+        Artefact.new(
+          title: nil,
+          nodes: [n: [labels: ["X"]]],
+          relationships: []
+        )
+
+      mmd = Artefact.Mermaid.export(a)
+      refute String.contains?(mmd, "---")
+      refute String.contains?(mmd, "accTitle")
+      assert String.starts_with?(mmd, "graph LR\n")
+    end
+
+    test "YAML-quotes a title containing a colon" do
+      a = Artefact.new(title: "Sand Talk: a yarn", nodes: [], relationships: [])
+      assert String.contains?(Artefact.Mermaid.export(a), ~s|title: "Sand Talk: a yarn"|)
+    end
+
+    test "YAML-quotes and escapes a title with a double quote" do
+      a = Artefact.new(title: ~s|she said "hi"|, nodes: [], relationships: [])
+      assert String.contains?(Artefact.Mermaid.export(a), ~s|title: "she said \\"hi\\""|)
+    end
+
+    test "accTitle escaping is independent of YAML quoting" do
+      a = Artefact.new(title: "Sand Talk: a yarn", nodes: [], relationships: [])
+      assert String.contains?(Artefact.Mermaid.export(a), "  accTitle: Sand Talk: a yarn")
+    end
+  end
+
+  describe "Artefact.new/1 — :description option" do
+    test "defaults to nil when not provided" do
+      a = Artefact.new()
+      assert a.description == nil
+    end
+
+    test "stores the description when provided" do
+      a = Artefact.new(description: "the simplest true thing about us_two")
+      assert a.description == "the simplest true thing about us_two"
+    end
+
+    test "description is independent of title" do
+      a = Artefact.new(title: "UsTwo", description: "Me toward You")
+      assert a.title == "UsTwo"
+      assert a.description == "Me toward You"
+    end
+  end
+
+  describe "Artefact.Arrows round-trip — description" do
+    test "preserves a set description" do
+      original =
+        Artefact.new(
+          title: "UsTwo",
+          description: "the simplest true thing",
+          base_label: "UsTwo",
+          nodes: [a: [labels: ["Agent"]]],
+          relationships: []
+        )
+
+      round_tripped = original |> Artefact.Arrows.to_json() |> Artefact.Arrows.from_json!()
+      assert round_tripped.description == "the simplest true thing"
+    end
+
+    test "preserves a nil description" do
+      original = Artefact.new(title: "Bare", nodes: [], relationships: [])
+      assert original.description == nil
+
+      round_tripped = original |> Artefact.Arrows.to_json() |> Artefact.Arrows.from_json!()
+      assert round_tripped.description == nil
+    end
+  end
+
+  describe "Artefact.Mermaid.export/2 — description" do
+    test "emits accDescr inline when description is single-line" do
+      a =
+        Artefact.new(
+          title: "UsTwo",
+          description: "Me toward You",
+          nodes: [],
+          relationships: []
+        )
+
+      assert String.contains?(Artefact.Mermaid.export(a), "  accDescr: Me toward You")
+    end
+
+    test "uses block form when description contains newlines" do
+      a =
+        Artefact.new(
+          title: "UsTwo",
+          description: "first line\nsecond line",
+          nodes: [],
+          relationships: []
+        )
+
+      mmd = Artefact.Mermaid.export(a)
+      assert String.contains?(mmd, "  accDescr {\n    first line\n    second line\n  }")
+      refute String.contains?(mmd, "accDescr:")
+    end
+
+    test "omits accDescr when description is nil" do
+      a = Artefact.new(title: "Titled but undescribed", nodes: [], relationships: [])
+      mmd = Artefact.Mermaid.export(a)
+      refute String.contains?(mmd, "accDescr")
+    end
+
+    test "accDescr appears after accTitle and before nodes" do
+      a =
+        Artefact.new(
+          title: "Order",
+          description: "matters",
+          nodes: [n: [labels: ["X"]]],
+          relationships: []
+        )
+
+      mmd = Artefact.Mermaid.export(a)
+      title_idx = :binary.match(mmd, "accTitle:") |> elem(0)
+      descr_idx = :binary.match(mmd, "accDescr:") |> elem(0)
+      node_idx = :binary.match(mmd, "n0((") |> elem(0)
+      assert title_idx < descr_idx
+      assert descr_idx < node_idx
+    end
+  end
+
+  describe "Artefact.combine/3" do
+    @uuid_shared "019d0000-0000-7000-8000-000000000000"
+
+    defp combine_artefact(base_label, uuid) do
+      %Artefact{
+        id: Artefact.UUID.generate_v7(),
+        uuid: Artefact.UUID.generate_v7(),
+        title: base_label,
+        base_label: base_label,
+        style: nil,
+        metadata: %{},
+        graph: %Artefact.Graph{
+          nodes: [%Artefact.Node{id: "n0", uuid: uuid, labels: [], properties: %{}}],
+          relationships: []
+        }
+      }
+    end
+
+    test "combines two artefacts via auto-found bindings" do
+      heart = combine_artefact("Knowing", @uuid_shared)
+      other = combine_artefact("Valuing", @uuid_shared)
+
+      result = Artefact.combine(heart, other)
+      assert length(result.graph.nodes) == 1
+    end
+
+    test "default base_label is portmanteau of heart + other" do
+      heart = combine_artefact("Knowing", @uuid_shared)
+      other = combine_artefact("Valuing", @uuid_shared)
+
+      result = Artefact.combine(heart, other)
+      assert result.base_label == "KnowingValuing"
+    end
+
+    test "title defaults to base_label when not given" do
+      heart = combine_artefact("Knowing", @uuid_shared)
+      other = combine_artefact("Valuing", @uuid_shared)
+
+      result = Artefact.combine(heart, other)
+      assert result.title == "KnowingValuing"
+    end
+
+    test "description defaults to nil when not given" do
+      heart = combine_artefact("Knowing", @uuid_shared)
+      other = combine_artefact("Valuing", @uuid_shared)
+
+      result = Artefact.combine(heart, other)
+      assert result.description == nil
+    end
+
+    test "applies title override from opts" do
+      heart = combine_artefact("Knowing", @uuid_shared)
+      other = combine_artefact("Valuing", @uuid_shared)
+
+      result = Artefact.combine(heart, other, title: "Custom")
+      assert result.title == "Custom"
+    end
+
+    test "applies description override from opts" do
+      heart = combine_artefact("Knowing", @uuid_shared)
+      other = combine_artefact("Valuing", @uuid_shared)
+
+      result = Artefact.combine(heart, other, description: "yarned")
+      assert result.description == "yarned"
+    end
+
+    test "applies title and description together" do
+      heart = combine_artefact("Knowing", @uuid_shared)
+      other = combine_artefact("Valuing", @uuid_shared)
+
+      result = Artefact.combine(heart, other, title: "MeMind", description: "Mind of Me")
+      assert result.title == "MeMind"
+      assert result.description == "Mind of Me"
+    end
+
+    test "chains in a pipeline" do
+      a = combine_artefact("Knowing", @uuid_shared)
+      b = combine_artefact("Valuing", @uuid_shared)
+      c = combine_artefact("Being", @uuid_shared)
+
+      result = a |> Artefact.combine(b) |> Artefact.combine(c)
+      assert result.base_label == "KnowingValuingBeing"
+      assert length(result.graph.nodes) == 1
+    end
+
+    test "pipeline applies title and description on the final step" do
+      a = combine_artefact("Knowing", @uuid_shared)
+      b = combine_artefact("Valuing", @uuid_shared)
+      c = combine_artefact("Being", @uuid_shared)
+
+      result =
+        a
+        |> Artefact.combine(b)
+        |> Artefact.combine(c, title: "MeMind", description: "Mind of Me")
+
+      assert result.title == "MeMind"
+      assert result.description == "Mind of Me"
+    end
+
+    test "records :harmonised provenance with calling module" do
+      heart = combine_artefact("Knowing", @uuid_shared)
+      other = combine_artefact("Valuing", @uuid_shared)
+
+      result = Artefact.combine(heart, other)
+      assert %{provenance: %{source: :harmonised, module: ArtefactTest}} = result.metadata
+    end
+
+    test "raises when artefacts have no shared nodes" do
+      heart = combine_artefact("Knowing", "019d0000-0000-7000-8000-000000000010")
+      other = combine_artefact("Valuing", "019d0000-0000-7000-8000-000000000020")
+
+      assert_raise MatchError, fn -> Artefact.combine(heart, other) end
+    end
+  end
 end
