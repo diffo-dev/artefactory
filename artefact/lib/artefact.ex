@@ -76,6 +76,45 @@ defmodule Artefact do
   end
 
   @doc """
+  Combine `other` into `heart` using bindings auto-found between them.
+
+  Designed for pipelines — `heart` flows through the pipe as the first argument,
+  so a chain of combines accumulates a single heart from many others:
+
+      me_knowing
+      |> Artefact.combine(me_valuing)
+      |> Artefact.combine(me_being)
+      |> Artefact.combine(me_doing, title: "MeMind", description: "Mind of Me.")
+
+  Bindings are found via `Artefact.Binding.find/2` — every node sharing a uuid
+  between `heart` and `other` becomes a binding. Raises `MatchError` if no
+  bindings are found.
+
+  Internally delegates to `harmonise/4`, so `:title` and `:base_label` overrides
+  in `opts` are honoured. `:description` is also accepted and applied to the
+  result.
+
+  Records `:harmonised` provenance with the calling module.
+  """
+  defmacro combine(heart, other, opts \\ []) do
+    caller = __CALLER__.module
+    quote do
+      Artefact.do_combine(unquote(heart), unquote(other), unquote(opts), unquote(caller))
+    end
+  end
+
+  @doc false
+  def do_combine(%__MODULE__{} = heart, %__MODULE__{} = other, opts, caller) do
+    {:ok, bindings} = Artefact.Binding.find(heart, other)
+    result = do_harmonise(heart, other, bindings, opts, caller)
+
+    case Keyword.fetch(opts, :description) do
+      {:ok, description} -> %{result | description: description}
+      :error -> result
+    end
+  end
+
+  @doc """
   Harmonise two artefacts using declared bindings.
 
   Bound nodes are merged: lower uuid wins for identity and properties,
