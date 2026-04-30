@@ -11,12 +11,13 @@ defmodule Artefact do
   persistence.
   """
 
-  defstruct [:id, :uuid, :title, :base_label, :style, metadata: %{}, graph: %Artefact.Graph{}]
+  defstruct [:id, :uuid, :title, :description, :base_label, :style, metadata: %{}, graph: %Artefact.Graph{}]
 
   @type t :: %__MODULE__{
           id: String.t(),
           uuid: String.t(),
           title: String.t() | nil,
+          description: String.t() | nil,
           base_label: String.t() | nil,
           style: atom() | nil,
           graph: Artefact.Graph.t(),
@@ -26,6 +27,10 @@ defmodule Artefact do
   @doc """
   Create a new Artefact. Defaults `base_label` and `title` to the short name
   of the calling module. Override with `title:` or `base_label:` in attrs.
+
+  Optional `description:` is a longer human-readable note about the artefact —
+  surfaced as Mermaid `accDescr` and in the `ArtefactKino` inspector. Defaults
+  to `nil`; pass it explicitly when you have something to say.
 
   Records `:struct` provenance with the calling module.
   """

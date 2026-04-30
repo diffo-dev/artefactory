@@ -47,6 +47,30 @@ the us_two round-trip, direction option, both escapes, the empty
 graph, and the no-name fallback to node id.
 ```
 
+## Draft commit message — `artefact` (branch `9-support-description`)
+
+```
+feat(artefact): optional description field, surfaced as Mermaid accDescr
+
+%Artefact{} now carries an optional :description alongside :title.
+It defaults to nil and is only emitted into Mermaid when set.
+
+- new field on the struct + typespec
+- Artefact.new accepts description: passthrough; macro docstring updated
+- Artefact.Arrows round-trips description as a top-level "description"
+  key (peer of "title", may be null)
+- Artefact.Mermaid emits accDescr (inline form for single-line,
+  block form `accDescr { ... }` when the description contains
+  newlines); placed between accTitle and the node lines
+- ArtefactKino inspector grows a `description` row on the Artefact tab
+
+AGENTS.md schema updated.
+
+compose/harmonise are deliberately left to default description to nil —
+combining two descriptions is a judgement call we don't want the
+library making silently. Pass description: in opts when needed.
+```
+
 ## Draft commit message — `artefact_kino`
 
 ```

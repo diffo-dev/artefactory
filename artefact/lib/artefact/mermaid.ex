@@ -17,6 +17,12 @@ defmodule Artefact.Mermaid do
   for screen readers. A nil title produces neither — the export starts at
   `graph <direction>`.
 
+  When `artefact.description` is set, an `accDescr:` line follows the
+  `accTitle:` line. Multi-line descriptions use the block form
+  (`accDescr { ... }`); single-line descriptions use the inline form. A nil
+  description is omitted. Like `accTitle`, the description is screen-reader
+  only — Mermaid does not render it visually.
+
   Lossy: `position`, `style`, properties beyond `name`, and the artefact-level
   `base_label` (collapsed into per-node labels at output time) are not represented.
   """
@@ -45,7 +51,10 @@ defmodule Artefact.Mermaid do
         n0 -->|US_TWO| n1
 
   """
-  def export(%Artefact{title: title, base_label: base_label, graph: graph}, opts \\ []) do
+  def export(
+        %Artefact{title: title, description: description, base_label: base_label, graph: graph},
+        opts \\ []
+      ) do
     direction = Keyword.get(opts, :direction, :LR)
 
     unless direction in @directions do
@@ -56,7 +65,8 @@ defmodule Artefact.Mermaid do
     node_lines = Enum.map(graph.nodes, &node_line(&1, base_label))
     rel_lines = Enum.map(graph.relationships, &rel_line/1)
 
-    body = ["graph #{direction}" | acc_title_lines(title) ++ node_lines ++ rel_lines]
+    accessibility = acc_title_lines(title) ++ acc_descr_lines(description)
+    body = ["graph #{direction}" | accessibility ++ node_lines ++ rel_lines]
 
     Enum.join(front_matter(title) ++ body, "\n")
   end
@@ -68,6 +78,23 @@ defmodule Artefact.Mermaid do
 
   defp acc_title_lines(nil), do: []
   defp acc_title_lines(title), do: ["  accTitle: #{single_line(title)}"]
+
+  defp acc_descr_lines(nil), do: []
+
+  defp acc_descr_lines(description) do
+    s = to_string(description)
+
+    if String.contains?(s, "\n") do
+      indented =
+        s
+        |> String.split("\n")
+        |> Enum.map_join("\n", &"    #{&1}")
+
+      ["  accDescr {", indented, "  }"]
+    else
+      ["  accDescr: #{s}"]
+    end
+  end
 
   # YAML plain scalar where safe; double-quoted (with `"` and `\` escaped)
   # when the value contains characters that break a bare scalar.

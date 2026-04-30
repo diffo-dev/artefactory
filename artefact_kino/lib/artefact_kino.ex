@@ -39,6 +39,7 @@ defmodule ArtefactKino do
       mermaid:       Artefact.Mermaid.export(artefact),
       default:       Atom.to_string(default),
       title:         artefact.title || artefact.base_label || "Artefact",
+      description:   artefact.description,
       artefact_rows: artefact_rows(artefact),
       nodes_rows:    nodes_rows(artefact),
       rels_rows:     rels_rows(artefact)
@@ -68,11 +69,12 @@ defmodule ArtefactKino do
 
   defp artefact_rows(%Artefact{} = a) do
     [
-      %{key: "id",         value: a.id},
-      %{key: "uuid",       value: a.uuid},
-      %{key: "title",      value: inspect(a.title)},
-      %{key: "base_label", value: inspect(a.base_label)},
-      %{key: "metadata",   value: inspect(a.metadata, pretty: true)}
+      %{key: "id",          value: a.id},
+      %{key: "uuid",        value: a.uuid},
+      %{key: "title",       value: inspect(a.title)},
+      %{key: "description", value: inspect(a.description)},
+      %{key: "base_label",  value: inspect(a.base_label)},
+      %{key: "metadata",    value: inspect(a.metadata, pretty: true)}
     ]
   end
 
@@ -187,10 +189,23 @@ defmodule ArtefactKino do
     export function init(ctx, data) {
       ctx.root.style.cssText = "font-family:monospace;background:#111;color:#e0e0e0;";
 
+      const escapeHtml = (s) => String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+
+      const headerHtml = `
+        <div style="padding:6px 8px;border-bottom:1px solid #333;">
+          <div style="font-size:13px;color:#aaa;">${escapeHtml(data.title)}</div>
+          ${data.description
+            ? `<div style="font-size:11px;color:#888;margin-top:2px;font-style:italic;white-space:pre-line;">${escapeHtml(data.description)}</div>`
+            : ""}
+        </div>`;
+
       ctx.root.innerHTML = `
-        <div style="padding:6px 8px;border-bottom:1px solid #333;font-size:13px;color:#aaa;">
-          ${data.title}
-        </div>
+        ${headerHtml}
         <div style="display:flex;height:560px;gap:0;">
 
           <!-- graph panel -->
