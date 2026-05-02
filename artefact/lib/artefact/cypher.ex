@@ -153,8 +153,21 @@ defmodule Artefact.Cypher do
     "(#{id}#{label_str} #{prop_str})"
   end
 
-  defp effective_labels(labels, nil), do: labels
-  defp effective_labels(labels, base_label), do: Enum.uniq(labels ++ [base_label])
+  defp effective_labels(labels, nil), do: pascal_case(labels)
+  defp effective_labels(labels, base_label), do: pascal_case(Enum.uniq(labels ++ [base_label]))
+
+  defp pascal_case(labels) when is_list(labels) do
+    Enum.map(labels, &pascal_case(&1))
+  end
+
+  defp pascal_case(label) when is_binary(label) do
+    # split by spaces, captialise first letter only and join
+    String.split(label, " ") |> Enum.map_join(&capitalize_first(&1))
+  end
+
+  def capitalize_first(<<first::utf8, rest::binary>>) do
+    String.upcase(<<first::utf8>>) <> rest
+  end
 
   defp rel_pattern(%Artefact.Relationship{type: type, properties: props}) do
     prop_str = props_to_cypher(props)

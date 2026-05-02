@@ -688,8 +688,8 @@ defmodule ArtefactTest do
       assert length(a.graph.nodes) == 8
     end
 
-    test "base_label is ArtefactHarmonise", %{artefact: a} do
-      assert a.base_label == "ArtefactHarmonise"
+    test "base_label is Artefact Harmonise", %{artefact: a} do
+      assert a.base_label == "Artefact Harmonise"
     end
 
     test "has compose, harmonise, Binding, guards and outcomes", %{artefact: a} do
