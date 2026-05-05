@@ -31,30 +31,35 @@ defmodule ArtefactKino do
 
   defp build_data(artefact, default) do
     %{
-      nodes:         vis_nodes(artefact),
-      edges:         vis_edges(artefact),
+      nodes: vis_nodes(artefact),
+      edges: vis_edges(artefact),
       create_cypher: Artefact.Cypher.create(artefact),
-      merge_cypher:  Artefact.Cypher.merge(artefact),
-      arrows_json:   Artefact.Arrows.to_json(artefact),
-      mermaid:       Artefact.Mermaid.export(artefact),
-      default:       Atom.to_string(default),
-      title:         artefact.title || artefact.base_label || "Artefact",
-      description:   artefact.description,
+      merge_cypher: Artefact.Cypher.merge(artefact),
+      arrows_json: Artefact.Arrows.to_json(artefact),
+      mermaid: Artefact.Mermaid.export(artefact),
+      default: Atom.to_string(default),
+      title: artefact.title || artefact.base_label || "Artefact",
+      description: artefact.description,
       artefact_rows: artefact_rows(artefact),
-      nodes_rows:    nodes_rows(artefact),
-      rels_rows:     rels_rows(artefact)
+      nodes_rows: nodes_rows(artefact),
+      rels_rows: rels_rows(artefact)
     }
   end
 
   defp vis_nodes(%Artefact{graph: graph, base_label: base_label}) do
     Enum.map(graph.nodes, fn node ->
-      all_labels      = Enum.uniq(node.labels ++ if(base_label, do: [base_label], else: []))
+      all_labels = Enum.uniq(node.labels ++ if(base_label, do: [base_label], else: []))
       semantic_labels = Enum.reject(node.labels, &(&1 == base_label))
-      name    = Map.get(node.properties, "name", node.id)
-      label   = if semantic_labels == [], do: name, else: "#{name}\n#{Enum.join(semantic_labels, " ")}"
-      tooltip = node.properties
+      name = Map.get(node.properties, "name", node.id)
+
+      label =
+        if semantic_labels == [], do: name, else: "#{name}\n#{Enum.join(semantic_labels, " ")}"
+
+      tooltip =
+        node.properties
         |> Enum.map(fn {k, v} -> "#{k}: #{v}" end)
         |> Enum.join("\n")
+
       %{id: node.id, label: label, labels: all_labels, title: "#{node.uuid}\n#{tooltip}"}
     end)
   end
@@ -69,21 +74,21 @@ defmodule ArtefactKino do
 
   defp artefact_rows(%Artefact{} = a) do
     [
-      %{key: "id",          value: a.id},
-      %{key: "uuid",        value: a.uuid},
-      %{key: "title",       value: inspect(a.title)},
+      %{key: "id", value: a.id},
+      %{key: "uuid", value: a.uuid},
+      %{key: "title", value: inspect(a.title)},
       %{key: "description", value: inspect(a.description)},
-      %{key: "base_label",  value: inspect(a.base_label)},
-      %{key: "metadata",    value: inspect(a.metadata, pretty: true)}
+      %{key: "base_label", value: inspect(a.base_label)},
+      %{key: "metadata", value: inspect(a.metadata, pretty: true)}
     ]
   end
 
   defp nodes_rows(%Artefact{graph: graph}) do
     Enum.map(graph.nodes, fn n ->
       %{
-        id:         n.id,
-        uuid:       n.uuid,
-        labels:     Enum.join(n.labels, ", "),
+        id: n.id,
+        uuid: n.uuid,
+        labels: Enum.join(n.labels, ", "),
         properties: inspect(n.properties)
       }
     end)
@@ -94,10 +99,10 @@ defmodule ArtefactKino do
     |> Enum.with_index()
     |> Enum.map(fn {r, idx} ->
       %{
-        idx:        idx,
-        from:       r.from_id,
-        type:       r.type,
-        to:         r.to_id,
+        idx: idx,
+        from: r.from_id,
+        type: r.type,
+        to: r.to_id,
         properties: inspect(r.properties)
       }
     end)
@@ -219,11 +224,12 @@ defmodule ArtefactKino do
           </div>
 
           <!-- elixir panel -->
-          <div style="flex:1;display:flex;flex-direction:column;border-right:1px solid #333;">
-            <div style="display:flex;gap:0;border-bottom:1px solid #333;">
+          <div id="inspector-panel" style="flex:1;display:flex;flex-direction:column;border-right:1px solid #333;">
+            <div style="display:flex;gap:4px;padding:4px;border-bottom:1px solid #333;align-items:center;justify-content:flex-end;">
               <button class="tbtn" data-tab="artefact" style="flex:1;">Artefact</button>
               <button class="tbtn" data-tab="nodes"    style="flex:1;">Nodes</button>
               <button class="tbtn" data-tab="rels"     style="flex:1;">Relationships</button>
+              <button id="inspector-collapse-btn" title="Collapse">◀</button>
             </div>
             <div id="tab-content" style="flex:1;overflow:auto;"></div>
           </div>
@@ -235,7 +241,7 @@ defmodule ArtefactKino do
               <button class="cbtn" data-cypher="merge">MERGE</button>
               <button class="cbtn" data-cypher="json">JSON</button>
               <button class="cbtn" data-cypher="mermaid">MERMAID</button>
-              <button id="collapse-btn" title="Collapse" style="margin-left:auto;">◀</button>
+              <button id="export-collapse-btn" title="Collapse" style="margin-left:auto;">◀</button>
             </div>
             <pre id="cypher" style="flex:1;overflow:auto;margin:0;padding:10px;font-size:11px;line-height:1.6;color:#e0e0e0;white-space:pre-wrap;cursor:text;"></pre>
           </div>
@@ -266,21 +272,41 @@ defmodule ArtefactKino do
       cypherBtns.forEach(b => b.addEventListener("click", () => { currentCypher = b.dataset.cypher; renderCypher(); }));
       renderCypher();
 
-      // -- collapse export panel --
-      const exportPanel  = ctx.root.querySelector("#export-panel");
-      const collapseBtn  = ctx.root.querySelector("#collapse-btn");
-      let exportCollapsed = false;
+      // -- collapse helper (shared by inspector and export) --
+      function setupCollapse(panel, button, hideSelectors, defaultCollapsed) {
+        let collapsed;
+        function setState(state) {
+          collapsed = state;
+          panel.style.flex     = collapsed ? "0 0 32px" : "1";
+          panel.style.overflow = "hidden";
+          button.textContent   = collapsed ? "▶" : "◀";
+          btnStyle(button, collapsed);
+          // btnStyle uses cssText which wipes inline styles — reapply margin-left:auto
+          // so the button stays pushed to the right of the header strip when it is
+          // the only visible child (the panel-is-collapsed case).
+          button.style.marginLeft = "auto";
+          hideSelectors.forEach(sel => {
+            ctx.root.querySelectorAll(sel).forEach(el => el.style.display = collapsed ? "none" : "");
+          });
+        }
+        setState(defaultCollapsed);
+        button.addEventListener("click", () => setState(!collapsed));
+        return { expand: () => { if (collapsed) setState(false); } };
+      }
 
-      btnStyle(collapseBtn, false);
-      collapseBtn.addEventListener("click", () => {
-        exportCollapsed = !exportCollapsed;
-        exportPanel.style.flex    = exportCollapsed ? "0 0 32px" : "1";
-        exportPanel.style.overflow = "hidden";
-        collapseBtn.textContent   = exportCollapsed ? "▶" : "◀";
-        btnStyle(collapseBtn, exportCollapsed);
-        ctx.root.querySelector("#cypher").style.display = exportCollapsed ? "none" : "";
-        ctx.root.querySelectorAll(".cbtn").forEach(b => b.style.display = exportCollapsed ? "none" : "");
-      });
+      const inspectorControl = setupCollapse(
+        ctx.root.querySelector("#inspector-panel"),
+        ctx.root.querySelector("#inspector-collapse-btn"),
+        ["#tab-content", ".tbtn"],
+        true
+      );
+
+      const exportControl = setupCollapse(
+        ctx.root.querySelector("#export-panel"),
+        ctx.root.querySelector("#export-collapse-btn"),
+        ["#cypher", ".cbtn"],
+        true
+      );
 
       // -- click to select all in pre elements --
       function selectAll(el) {
@@ -369,6 +395,7 @@ defmodule ArtefactKino do
 
           network.on("selectNode", ({ nodes: selected }) => {
             if (!selected.length) return;
+            inspectorControl.expand();
             pendingHighlight = selected[0];
             renderTab("nodes");
           });
@@ -376,6 +403,7 @@ defmodule ArtefactKino do
           network.on("selectEdge", ({ edges: selected, nodes: selectedNodes }) => {
             if (!selected.length) return;
             if (selectedNodes && selectedNodes.length > 0) return;
+            inspectorControl.expand();
             pendingHighlight = selected[0];
             renderTab("rels");
           });

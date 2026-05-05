@@ -5,6 +5,10 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## 0.1.4 — 2026-05-05
+
+- Inspector panel collapsible (matching the Export panel); both default collapsed to give the graph more room on bigger artefacts; selecting a node or relationship in the graph auto-expands the Inspector. Bumps `artefact` requirement to `~> 0.1.4` for convenience.
+
 ## 0.1.3 — 2026-04-30
 
 - Compatible with `artefact ~> 0.1.3`
