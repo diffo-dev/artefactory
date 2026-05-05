@@ -5,6 +5,10 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## 0.1.4 — 2026-05-05
+
+- `Artefact.graft/3` — pipeline-friendly convenience for extending an artefact with new nodes and relationships declared inline (same shape as `Artefact.new`); every node in args MUST carry `:uuid` (no auto-find — uuid is the binding); nodes whose uuid lives in left bind to it (labels unioned, properties merged left-wins), nodes with new uuids are added; opts honour `:title` and `:description`; raises `ArgumentError` for missing uuid, duplicate keys, or relationship referencing an unknown key; records `:grafted` provenance source
+
 ## 0.1.3 — 2026-04-30
 
 - `Artefact.Mermaid.export/2` — derives Mermaid `graph` source from an `%Artefact{}`, alongside `Artefact.Cypher` and `Artefact.Arrows`; nodes render as circles, `:direction` option for `:LR`, `:RL`, `:TB`, `:BT`, `:TD`
