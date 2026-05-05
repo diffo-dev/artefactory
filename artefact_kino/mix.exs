@@ -65,7 +65,12 @@ defmodule ArtefactKino.MixProject do
       main: "ArtefactKino",
       source_url: @github_url,
       source_ref: "v#{@version}",
-      extras: ["README.md", "CHANGELOG.md"]
+      extras: [
+        "README.md",
+        "CHANGELOG.md",
+        {"artefact_kino.livemd", title: "Livebook"},
+        {"LICENSES/MIT.txt", title: "License (MIT)"}
+      ]
     ]
   end
 end
