@@ -5,7 +5,7 @@ defmodule ArtefactKino.MixProject do
   @moduledoc false
   use Mix.Project
 
-  @version "0.1.3"
+  @version "0.1.4"
   @github_url "https://github.com/diffo-dev/artefactory"
 
   def project do
@@ -17,7 +17,8 @@ defmodule ArtefactKino.MixProject do
       deps: deps(),
       package: package(),
       name: "ArtefactKino",
-      description: "Livebook Kino widget for rendering Artefactory knowledge graph fragments (Artefacts)",
+      description:
+        "Livebook Kino widget for rendering Artefactory knowledge graph fragments (Artefacts)",
       source_url: @github_url,
       docs: docs()
     ]
@@ -41,13 +42,13 @@ defmodule ArtefactKino.MixProject do
   defp artefact_dep do
     cond do
       System.get_env("HEX_PUBLISH") == "1" ->
-        {:artefact, "~> 0.1.3"}
+        {:artefact, "~> 0.1.4"}
 
       File.exists?(Path.join(__DIR__, "../artefact/mix.exs")) ->
         {:artefact, path: "../artefact"}
 
       true ->
-        {:artefact, "~> 0.1.3"}
+        {:artefact, "~> 0.1.4"}
     end
   end
 
@@ -64,7 +65,12 @@ defmodule ArtefactKino.MixProject do
       main: "ArtefactKino",
       source_url: @github_url,
       source_ref: "v#{@version}",
-      extras: ["README.md", "CHANGELOG.md"]
+      extras: [
+        "README.md",
+        "CHANGELOG.md",
+        {"artefact_kino.livemd", title: "Livebook"},
+        {"LICENSES/MIT.txt", title: "License (MIT)"}
+      ]
     ]
   end
 end

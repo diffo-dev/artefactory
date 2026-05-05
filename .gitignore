@@ -19,7 +19,7 @@ artefactory-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
-/drafts
+/.drafts
 /.elixir_ls
 
 .DS_Store
