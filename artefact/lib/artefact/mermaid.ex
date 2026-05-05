@@ -117,7 +117,23 @@ defmodule Artefact.Mermaid do
 
   defp needs_yaml_quoting?(s) do
     String.contains?(s, [":", "\"", "#", "\n"]) or
-      String.starts_with?(s, [" ", "\t", "&", "*", "!", "?", "{", "[", "|", ">", "%", "@", "`", "'", "-"])
+      String.starts_with?(s, [
+        " ",
+        "\t",
+        "&",
+        "*",
+        "!",
+        "?",
+        "{",
+        "[",
+        "|",
+        ">",
+        "%",
+        "@",
+        "`",
+        "'",
+        "-"
+      ])
   end
 
   # accTitle / accDescr inline form is single-line; collapse any newlines to spaces.
