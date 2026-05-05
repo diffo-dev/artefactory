@@ -5,7 +5,7 @@ defmodule Artefact.MixProject do
   @moduledoc false
   use Mix.Project
 
-  @version "0.1.3"
+  @version "0.1.4"
   @github_url "https://github.com/diffo-dev/artefactory"
 
   def project do
@@ -14,6 +14,7 @@ defmodule Artefact.MixProject do
       version: @version,
       elixir: "~> 1.16",
       start_permanent: Mix.env() == :prod,
+      elixirc_paths: elixirc_paths(Mix.env()),
       deps: deps(),
       package: package(),
       name: "Artefact",
@@ -22,6 +23,9 @@ defmodule Artefact.MixProject do
       docs: docs()
     ]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_),     do: ["lib"]
 
   def application do
     [extra_applications: [:logger]]
@@ -47,7 +51,11 @@ defmodule Artefact.MixProject do
       main: "Artefact",
       source_url: @github_url,
       source_ref: "v#{@version}",
-      extras: ["README.md", "CHANGELOG.md"]
+      extras: [
+        "README.md",
+        "CHANGELOG.md",
+        {"LICENSES/MIT.txt", title: "License (MIT)"}
+      ]
     ]
   end
 end
