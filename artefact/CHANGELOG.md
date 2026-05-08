@@ -5,6 +5,20 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## 0.1.5 — 2026-05-05
+
+- `Artefact.is_artefact?/1`, `Artefact.is_valid?/1`, `Artefact.validate/1`, `Artefact.validate!/1` — public validation API. Closes [#26], [#27]
+- `Artefact.UUID.valid?/1` — UUIDv7 format predicate; used internally by validation and exposed for callers
+- All public ops (`new/1`, `compose/3`, `combine/3`, `harmonise/4`, `graft/3`) now validate their input artefacts and validate the produced artefact before returning — corruption fails at the call site rather than several steps downstream. Closes [#30] (empty/invalid uuid rejected at op input), [#24] (non-list `:labels` rejected at op input)
+- `Artefact.graft/3` enforces the no-new-islands rule — every new node in `args` must reach a bind-only key via `args.relationships`; raises `ArgumentError` listing orphan keys otherwise. Closes [#29]
+- Validation rule-set: artefact uuid is UUIDv7; node uuid is UUIDv7; node `:labels` is a list of strings; node `:properties` is a map; relationship `:type` is a non-empty string; relationship `:from_id`/`:to_id` reference an extant node; node uuids, node ids and relationship ids are unique within the graph
+
+[#24]: https://github.com/diffo-dev/artefactory/issues/24
+[#26]: https://github.com/diffo-dev/artefactory/issues/26
+[#27]: https://github.com/diffo-dev/artefactory/issues/27
+[#29]: https://github.com/diffo-dev/artefactory/issues/29
+[#30]: https://github.com/diffo-dev/artefactory/issues/30
+
 ## 0.1.4 — 2026-05-05
 
 - `Artefact.graft/3` — pipeline-friendly convenience for extending an artefact with new nodes and relationships declared inline (same shape as `Artefact.new`); every node in args MUST carry `:uuid` (no auto-find — uuid is the binding); nodes whose uuid lives in left bind to it (labels unioned, properties merged left-wins), nodes with new uuids are added; opts honour `:title` and `:description`; raises `ArgumentError` for missing uuid, duplicate keys, or relationship referencing an unknown key; records `:grafted` provenance source

@@ -21,10 +21,16 @@ defmodule ArtefactKino do
   @doc """
   Render an `%Artefact{}` as a three-panel Kino widget.
 
+  Validates the artefact via `Artefact.validate!/1` first so a
+  hand-built struct with malformed fields (non-list labels, missing
+  uuid, dangling relationship endpoint, etc.) fails with a clear
+  `ArgumentError` instead of a cryptic render-time error.
+
   Options:
   - `default:` — `:create` (default) or `:merge`
   """
   def new(%Artefact{} = artefact, opts \\ []) do
+    Artefact.validate!(artefact)
     default = Keyword.get(opts, :default, :create)
     Kino.JS.new(__MODULE__, build_data(artefact, default))
   end

@@ -5,7 +5,7 @@ defmodule ArtefactKino.MixProject do
   @moduledoc false
   use Mix.Project
 
-  @version "0.1.4"
+  @version "0.1.5"
   @github_url "https://github.com/diffo-dev/artefactory"
 
   def project do
@@ -42,13 +42,13 @@ defmodule ArtefactKino.MixProject do
   defp artefact_dep do
     cond do
       System.get_env("HEX_PUBLISH") == "1" ->
-        {:artefact, "~> 0.1.4"}
+        {:artefact, "~> 0.1.5"}
 
       File.exists?(Path.join(__DIR__, "../artefact/mix.exs")) ->
         {:artefact, path: "../artefact"}
 
       true ->
-        {:artefact, "~> 0.1.4"}
+        {:artefact, "~> 0.1.5"}
     end
   end
 
