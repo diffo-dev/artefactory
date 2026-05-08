@@ -5,6 +5,12 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## 0.1.5 — 2026-05-05
+
+- `ArtefactKino.new/1,2` now calls `Artefact.validate!/1` on its input — a hand-built `%Artefact{}` with malformed fields (non-list labels, missing uuid, dangling relationship endpoint, etc.) raises `ArgumentError` with structured reasons instead of a cryptic render-time error. Closes [#28]. Bumps `artefact` requirement to `~> 0.1.5` for the new validation API.
+
+[#28]: https://github.com/diffo-dev/artefactory/issues/28
+
 ## 0.1.4 — 2026-05-05
 
 - Inspector panel collapsible (matching the Export panel); both default collapsed to give the graph more room on bigger artefacts; selecting a node or relationship in the graph auto-expands the Inspector. Bumps `artefact` requirement to `~> 0.1.4` for convenience.

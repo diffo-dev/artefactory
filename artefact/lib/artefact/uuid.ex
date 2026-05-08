@@ -5,6 +5,14 @@ defmodule Artefact.UUID do
   @moduledoc false
   import Bitwise
 
+  # 8-4-4-4-12 hex with hyphens, version digit "7" at offset 14, variant in
+  # {8,9,a,b} at offset 19. Anchored ^...$.
+  @v7_regex ~r/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+
+  @doc "Returns true when `value` is a valid UUIDv7 string (lowercase hex)."
+  def valid?(value) when is_binary(value), do: Regex.match?(@v7_regex, value)
+  def valid?(_), do: false
+
   @doc "Generate a UUIDv7 string. Time-ordered; lower value = earlier creation."
   def generate_v7 do
     # 48-bit millisecond timestamp

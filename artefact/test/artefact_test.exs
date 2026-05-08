@@ -1590,4 +1590,302 @@ defmodule ArtefactTest do
                    end
     end
   end
+
+  describe "Artefact.UUID.valid?/1" do
+    test "true for a freshly generated UUIDv7" do
+      assert Artefact.UUID.valid?(Artefact.UUID.generate_v7())
+    end
+
+    test "true for canonical UUIDv7 strings" do
+      assert Artefact.UUID.valid?("019ddb71-c70b-7b3e-83b1-58f4d0be2852")
+      assert Artefact.UUID.valid?("019d0000-0000-7000-8000-000000000000")
+    end
+
+    test "false for empty string" do
+      refute Artefact.UUID.valid?("")
+    end
+
+    test "false for non-binary input" do
+      refute Artefact.UUID.valid?(nil)
+      refute Artefact.UUID.valid?(:atom)
+      refute Artefact.UUID.valid?(123)
+    end
+
+    test "false for wrong format" do
+      refute Artefact.UUID.valid?("019ddb71c70b7b3e83b158f4d0be2852")
+      refute Artefact.UUID.valid?("019ddb71-c70b-7b3e-83b1")
+      refute Artefact.UUID.valid?("019DDB71-C70B-7B3E-83B1-58F4D0BE2852")
+    end
+
+    test "false for wrong version digit (must be 7)" do
+      refute Artefact.UUID.valid?("019ddb71-c70b-4b3e-83b1-58f4d0be2852")
+    end
+
+    test "false for wrong variant digit (must be 8/9/a/b)" do
+      refute Artefact.UUID.valid?("019ddb71-c70b-7b3e-c3b1-58f4d0be2852")
+    end
+  end
+
+  describe "Artefact.is_artefact?/1" do
+    test "true for an %Artefact{} struct" do
+      assert Artefact.is_artefact?(Artefact.new())
+    end
+
+    test "false for non-artefact values" do
+      refute Artefact.is_artefact?(nil)
+      refute Artefact.is_artefact?(%{})
+      refute Artefact.is_artefact?(%Artefact.Node{})
+      refute Artefact.is_artefact?("artefact")
+    end
+  end
+
+  describe "Artefact.validate/1 + is_valid?/1" do
+    @good_uuid_a "019d0000-0000-7000-8000-0000000000a1"
+    @good_uuid_b "019d0000-0000-7000-8000-0000000000a2"
+
+    defp valid_artefact_with(nodes, rels) do
+      %Artefact{
+        id: Artefact.UUID.generate_v7(),
+        uuid: Artefact.UUID.generate_v7(),
+        title: nil,
+        base_label: nil,
+        style: nil,
+        metadata: %{},
+        graph: %Artefact.Graph{nodes: nodes, relationships: rels}
+      }
+    end
+
+    test "fresh Artefact.new is valid" do
+      assert Artefact.is_valid?(Artefact.new())
+      assert Artefact.validate(Artefact.new()) == :ok
+    end
+
+    test "non-artefact returns error" do
+      assert {:error, ["not an %Artefact{} struct"]} = Artefact.validate(%{})
+    end
+
+    test "rejects empty uuid on the artefact itself" do
+      a = %{Artefact.new() | uuid: ""}
+      assert {:error, reasons} = Artefact.validate(a)
+      assert Enum.any?(reasons, &(&1 =~ "uuid is not a valid UUIDv7"))
+    end
+
+    test "rejects non-list labels on a node" do
+      n = %Artefact.Node{id: "n0", uuid: @good_uuid_a, labels: "Engine", properties: %{}}
+      a = valid_artefact_with([n], [])
+      assert {:error, reasons} = Artefact.validate(a)
+      assert Enum.any?(reasons, &(&1 =~ "labels is not a list of strings"))
+    end
+
+    test "rejects list-of-non-strings labels on a node" do
+      n = %Artefact.Node{id: "n0", uuid: @good_uuid_a, labels: [:Engine], properties: %{}}
+      a = valid_artefact_with([n], [])
+      assert {:error, reasons} = Artefact.validate(a)
+      assert Enum.any?(reasons, &(&1 =~ "labels is not a list of strings"))
+    end
+
+    test "rejects non-map properties on a node" do
+      n = %Artefact.Node{id: "n0", uuid: @good_uuid_a, labels: [], properties: []}
+      a = valid_artefact_with([n], [])
+      assert {:error, reasons} = Artefact.validate(a)
+      assert Enum.any?(reasons, &(&1 =~ "properties is not a map"))
+    end
+
+    test "rejects relationship with from_id not in graph" do
+      n = %Artefact.Node{id: "n0", uuid: @good_uuid_a, labels: [], properties: %{}}
+
+      r = %Artefact.Relationship{
+        id: "r0",
+        type: "X",
+        from_id: "ghost",
+        to_id: "n0",
+        properties: %{}
+      }
+
+      a = valid_artefact_with([n], [r])
+      assert {:error, reasons} = Artefact.validate(a)
+      assert Enum.any?(reasons, &(&1 =~ ~s(from_id "ghost" not in graph)))
+    end
+
+    test "rejects relationship with empty type" do
+      n0 = %Artefact.Node{id: "n0", uuid: @good_uuid_a, labels: [], properties: %{}}
+      n1 = %Artefact.Node{id: "n1", uuid: @good_uuid_b, labels: [], properties: %{}}
+
+      r = %Artefact.Relationship{
+        id: "r0",
+        type: "",
+        from_id: "n0",
+        to_id: "n1",
+        properties: %{}
+      }
+
+      a = valid_artefact_with([n0, n1], [r])
+      assert {:error, reasons} = Artefact.validate(a)
+      assert Enum.any?(reasons, &(&1 =~ "type is not a non-empty string"))
+    end
+
+    test "rejects duplicate node uuids" do
+      n0 = %Artefact.Node{id: "n0", uuid: @good_uuid_a, labels: [], properties: %{}}
+      n1 = %Artefact.Node{id: "n1", uuid: @good_uuid_a, labels: [], properties: %{}}
+      a = valid_artefact_with([n0, n1], [])
+      assert {:error, reasons} = Artefact.validate(a)
+      assert Enum.any?(reasons, &(&1 =~ "duplicate node uuids"))
+    end
+
+    test "rejects duplicate node ids" do
+      n0 = %Artefact.Node{id: "n0", uuid: @good_uuid_a, labels: [], properties: %{}}
+      n1 = %Artefact.Node{id: "n0", uuid: @good_uuid_b, labels: [], properties: %{}}
+      a = valid_artefact_with([n0, n1], [])
+      assert {:error, reasons} = Artefact.validate(a)
+      assert Enum.any?(reasons, &(&1 =~ "duplicate node ids"))
+    end
+
+    test "is_valid? is the boolean shortcut" do
+      n = %Artefact.Node{id: "n0", uuid: "", labels: [], properties: %{}}
+      a = valid_artefact_with([n], [])
+      refute Artefact.is_valid?(a)
+      assert Artefact.is_valid?(Artefact.new())
+    end
+  end
+
+  describe "Artefact.validate!/1" do
+    test ":ok for a valid artefact" do
+      assert Artefact.validate!(Artefact.new()) == :ok
+    end
+
+    test "raises ArgumentError with reasons for invalid artefact" do
+      a = %{Artefact.new() | uuid: ""}
+
+      assert_raise ArgumentError,
+                   ~r/invalid artefact:.*uuid is not a valid UUIDv7/,
+                   fn -> Artefact.validate!(a) end
+    end
+  end
+
+  describe "Artefact.graft/3 — input rejection (validation)" do
+    alias Artefact.Test.Fixtures.OurShells
+
+    test "raises when a node :uuid is empty string" do
+      left = OurShells.our_shells()
+
+      assert_raise ArgumentError, ~r/:uuid "" is not a valid UUIDv7/, fn ->
+        Artefact.graft(left,
+          nodes: [bad: [labels: ["Knowing"], uuid: ""]],
+          relationships: []
+        )
+      end
+    end
+
+    test "raises when a node :uuid is malformed" do
+      left = OurShells.our_shells()
+
+      assert_raise ArgumentError, ~r/is not a valid UUIDv7/, fn ->
+        Artefact.graft(left,
+          nodes: [bad: [labels: ["X"], uuid: "not-a-uuid"]],
+          relationships: []
+        )
+      end
+    end
+
+    test "raises when a node :labels is not a list" do
+      left = OurShells.our_shells()
+
+      assert_raise ArgumentError, ~r/:labels "Engine" is not a list of strings/, fn ->
+        Artefact.graft(left,
+          nodes: [bad: [labels: "Engine", uuid: "019d0000-0000-7000-8000-0000000000d1"]],
+          relationships: []
+        )
+      end
+    end
+
+    test "raises when a node :properties is not a map" do
+      left = OurShells.our_shells()
+
+      assert_raise ArgumentError, ~r/:properties.* is not a map/, fn ->
+        Artefact.graft(left,
+          nodes: [bad: [properties: [], uuid: "019d0000-0000-7000-8000-0000000000d2"]],
+          relationships: []
+        )
+      end
+    end
+  end
+
+  describe "Artefact.graft/3 — no new islands (#29)" do
+    alias Artefact.Test.Fixtures.OurShells
+
+    test "raises when a single new node has no relationship to a bind-only node" do
+      left = OurShells.our_shells()
+
+      assert_raise ArgumentError, ~r/disconnected islands/, fn ->
+        Artefact.graft(left,
+          nodes: [
+            {:me, [uuid: OurShells.me_uuid()]},
+            {:floating, [labels: ["X"], uuid: "019d0000-0000-7000-8000-0000000000e1"]}
+          ],
+          relationships: []
+        )
+      end
+    end
+
+    test "raises when new nodes form a chain disconnected from any bind-only node" do
+      left = OurShells.our_shells()
+
+      assert_raise ArgumentError, ~r/disconnected islands/, fn ->
+        Artefact.graft(left,
+          nodes: [
+            {:me, [uuid: OurShells.me_uuid()]},
+            {:b, [labels: ["X"], uuid: "019d0000-0000-7000-8000-0000000000e2"]},
+            {:c, [labels: ["X"], uuid: "019d0000-0000-7000-8000-0000000000e3"]}
+          ],
+          relationships: [[from: :b, type: "X", to: :c]]
+        )
+      end
+    end
+
+    test "passes when a new node connects directly to a bind-only node" do
+      left = OurShells.our_shells()
+
+      result =
+        Artefact.graft(left,
+          nodes: [
+            {:me, [uuid: OurShells.me_uuid()]},
+            {:b, [labels: ["X"], uuid: "019d0000-0000-7000-8000-0000000000e4"]}
+          ],
+          relationships: [[from: :me, type: "REACHES", to: :b]]
+        )
+
+      assert Artefact.is_valid?(result)
+    end
+
+    test "passes when a chain of new nodes is anchored via the first to a bind-only" do
+      left = OurShells.our_shells()
+
+      result =
+        Artefact.graft(left,
+          nodes: [
+            {:me, [uuid: OurShells.me_uuid()]},
+            {:b, [labels: ["X"], uuid: "019d0000-0000-7000-8000-0000000000e5"]},
+            {:c, [labels: ["X"], uuid: "019d0000-0000-7000-8000-0000000000e6"]}
+          ],
+          relationships: [
+            [from: :me, type: "REACHES", to: :b],
+            [from: :b, type: "NEXT", to: :c]
+          ]
+        )
+
+      assert Artefact.is_valid?(result)
+    end
+
+    test "passes when args has only bind-only nodes (no new nodes)" do
+      left = OurShells.our_shells()
+
+      result =
+        Artefact.graft(left,
+          nodes: [{:me, [uuid: OurShells.me_uuid()]}],
+          relationships: []
+        )
+
+      assert Artefact.is_valid?(result)
+    end
+  end
 end

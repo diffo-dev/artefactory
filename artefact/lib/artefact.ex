@@ -23,7 +23,24 @@ defmodule Artefact do
       (same shape as `new`'s inline form, but every node MUST carry `:uuid`)
       into an existing artefact.
 
-  Every operation records its lineage in the result's `metadata.provenance`.
+  Every operation records its lineage in the result's `metadata.provenance`,
+  validates its inputs, and validates the produced artefact before returning
+  — so corruption fails at the call site rather than five steps downstream.
+
+  ## Validation
+
+    * `is_artefact?/1` — true when the value is an `%Artefact{}` struct.
+    * `is_valid?/1` — true when the artefact passes every structural rule.
+    * `validate/1` — returns `:ok` or `{:error, reasons}` (a list of strings).
+    * `validate!/1` — returns `:ok` or raises `ArgumentError` with the
+      collected reasons.
+
+  An artefact is *valid* when its uuid is a UUIDv7, every node has a
+  UUIDv7 uuid, every node's labels is a list of strings, every node's
+  properties is a map, every relationship's `from_id` and `to_id`
+  reference an extant node, every relationship type is a non-empty
+  string, and node uuids, node ids and relationship ids are unique
+  within the graph.
 
   ## Exporting
 
@@ -55,6 +72,145 @@ defmodule Artefact do
           metadata: map()
         }
 
+  # =====================================================================
+  # Validation API
+  # =====================================================================
+
+  @doc "Returns `true` when `value` is an `%Artefact{}` struct."
+  def is_artefact?(%__MODULE__{}), do: true
+  def is_artefact?(_), do: false
+
+  @doc "Returns `true` when `value` is a valid artefact (see module docs)."
+  def is_valid?(value) do
+    case validate(value) do
+      :ok -> true
+      {:error, _} -> false
+    end
+  end
+
+  @doc """
+  Validate an artefact. Returns `:ok` or `{:error, reasons}` where reasons
+  is a list of human-readable strings describing each rule violation.
+  """
+  def validate(%__MODULE__{} = a) do
+    errors =
+      []
+      |> check(Artefact.UUID.valid?(a.uuid), "uuid is not a valid UUIDv7")
+      |> check_string_or_nil(a.title, :title)
+      |> check_string_or_nil(a.description, :description)
+      |> check_string_or_nil(a.base_label, :base_label)
+      |> check_graph(a.graph)
+
+    case errors do
+      [] -> :ok
+      _ -> {:error, Enum.reverse(errors)}
+    end
+  end
+
+  def validate(_), do: {:error, ["not an %Artefact{} struct"]}
+
+  @doc """
+  Validate an artefact. Returns `:ok` or raises `ArgumentError` with the
+  collected reasons.
+  """
+  def validate!(value) do
+    case validate(value) do
+      :ok ->
+        :ok
+
+      {:error, reasons} ->
+        raise ArgumentError, "invalid artefact: " <> Enum.join(reasons, "; ")
+    end
+  end
+
+  defp check(errors, true, _msg), do: errors
+  defp check(errors, false, msg), do: [msg | errors]
+
+  defp check_string_or_nil(errors, nil, _field), do: errors
+  defp check_string_or_nil(errors, value, _field) when is_binary(value), do: errors
+  defp check_string_or_nil(errors, _value, field), do: ["#{field} is not a string or nil" | errors]
+
+  defp check_graph(errors, %Artefact.Graph{nodes: nodes, relationships: rels})
+       when is_list(nodes) and is_list(rels) do
+    errors
+    |> check_nodes(nodes)
+    |> check_relationships(rels, nodes)
+  end
+
+  defp check_graph(errors, _), do: ["graph is not %Artefact.Graph{} with list nodes/relationships" | errors]
+
+  defp check_nodes(errors, nodes) do
+    errors =
+      nodes
+      |> Enum.with_index()
+      |> Enum.reduce(errors, fn {n, i}, acc -> check_node(acc, n, i) end)
+
+    errors
+    |> check_unique(Enum.map(nodes, &node_uuid/1), "node uuid")
+    |> check_unique(Enum.map(nodes, &node_id/1), "node id")
+  end
+
+  defp node_uuid(%Artefact.Node{uuid: u}), do: u
+  defp node_uuid(_), do: nil
+  defp node_id(%Artefact.Node{id: id}), do: id
+  defp node_id(_), do: nil
+
+  defp check_node(errors, %Artefact.Node{} = n, idx) do
+    p = "node[#{idx}]"
+
+    errors
+    |> check(is_binary(n.id) and n.id != "", "#{p} id is not a non-empty string")
+    |> check(Artefact.UUID.valid?(n.uuid), "#{p} uuid is not a valid UUIDv7")
+    |> check(is_list(n.labels) and Enum.all?(n.labels, &is_binary/1),
+             "#{p} labels is not a list of strings")
+    |> check(is_map(n.properties), "#{p} properties is not a map")
+  end
+
+  defp check_node(errors, _, idx), do: ["node[#{idx}] is not %Artefact.Node{}" | errors]
+
+  defp check_relationships(errors, rels, nodes) do
+    node_ids = MapSet.new(nodes, fn
+      %Artefact.Node{id: id} -> id
+      _ -> nil
+    end)
+
+    errors =
+      rels
+      |> Enum.with_index()
+      |> Enum.reduce(errors, fn {r, i}, acc -> check_relationship(acc, r, i, node_ids) end)
+
+    check_unique(errors, Enum.map(rels, fn
+      %Artefact.Relationship{id: id} -> id
+      _ -> nil
+    end), "relationship id")
+  end
+
+  defp check_relationship(errors, %Artefact.Relationship{} = r, idx, node_ids) do
+    p = "relationship[#{idx}]"
+
+    errors
+    |> check(is_binary(r.id) and r.id != "", "#{p} id is not a non-empty string")
+    |> check(is_binary(r.type) and r.type != "", "#{p} type is not a non-empty string")
+    |> check(MapSet.member?(node_ids, r.from_id), "#{p} from_id #{inspect(r.from_id)} not in graph")
+    |> check(MapSet.member?(node_ids, r.to_id), "#{p} to_id #{inspect(r.to_id)} not in graph")
+    |> check(is_map(r.properties), "#{p} properties is not a map")
+  end
+
+  defp check_relationship(errors, _, idx, _), do: ["relationship[#{idx}] is not %Artefact.Relationship{}" | errors]
+
+  defp check_unique(errors, list, label) do
+    duplicates = (list -- Enum.uniq(list)) |> Enum.uniq() |> Enum.reject(&is_nil/1)
+
+    case duplicates do
+      [] -> errors
+      dupes -> ["duplicate #{label}s: #{inspect(dupes)}" | errors]
+    end
+  end
+
+  # =====================================================================
+  # Construction & Operations
+  # =====================================================================
+
   @doc """
   Create a new Artefact. Defaults `base_label` and `title` to the short name
   of the calling module. Override with `title:` or `base_label:` in attrs.
@@ -71,17 +227,30 @@ defmodule Artefact do
     default_base_label = caller_name && String.replace(caller_name, ~r/[^A-Za-z0-9]/, "")
 
     quote do
-      attrs = unquote(attrs)
-      metadata = %{provenance: %{source: :struct, module: unquote(caller)}}
-      title = Keyword.get(attrs, :title, unquote(caller_name))
-      base_label = Keyword.get(attrs, :base_label, unquote(default_base_label))
+      Artefact.do_new(
+        unquote(attrs),
+        unquote(caller),
+        unquote(caller_name),
+        unquote(default_base_label)
+      )
+    end
+  end
 
-      Artefact.build([
+  @doc false
+  def do_new(attrs, caller, caller_name, default_base_label) do
+    metadata = %{provenance: %{source: :struct, module: caller}}
+    title = Keyword.get(attrs, :title, caller_name)
+    base_label = Keyword.get(attrs, :base_label, default_base_label)
+
+    result =
+      build([
         {:title, title},
         {:base_label, base_label},
         {:metadata, metadata} | Keyword.drop(attrs, [:title, :base_label, :metadata])
       ])
-    end
+
+    validate!(result)
+    result
   end
 
   @doc """
@@ -104,6 +273,9 @@ defmodule Artefact do
 
   @doc false
   def do_compose(%__MODULE__{} = a1, %__MODULE__{} = a2, opts, caller) do
+    validate!(a1)
+    validate!(a2)
+
     base_label = Keyword.get(opts, :base_label, portmanteau(a1.base_label, a2.base_label))
     title = Keyword.get(opts, :title, base_label)
     graph = merge_graphs(a1.graph, a2.graph)
@@ -127,7 +299,11 @@ defmodule Artefact do
       }
     }
 
-    build([{:title, title}, {:base_label, base_label}, {:graph, graph}, {:metadata, metadata}])
+    result =
+      build([{:title, title}, {:base_label, base_label}, {:graph, graph}, {:metadata, metadata}])
+
+    validate!(result)
+    result
   end
 
   @doc """
@@ -161,13 +337,20 @@ defmodule Artefact do
 
   @doc false
   def do_combine(%__MODULE__{} = heart, %__MODULE__{} = other, opts, caller) do
-    {:ok, bindings} = Artefact.Binding.find(heart, other)
-    result = do_harmonise(heart, other, bindings, opts, caller)
+    validate!(heart)
+    validate!(other)
 
-    case Keyword.fetch(opts, :description) do
-      {:ok, description} -> %{result | description: description}
-      :error -> result
-    end
+    {:ok, bindings} = Artefact.Binding.find(heart, other)
+    harmonised = do_harmonise(heart, other, bindings, opts, caller)
+
+    result =
+      case Keyword.fetch(opts, :description) do
+        {:ok, description} -> %{harmonised | description: description}
+        :error -> harmonised
+      end
+
+    validate!(result)
+    result
   end
 
   @doc """
@@ -231,10 +414,12 @@ defmodule Artefact do
 
   @doc false
   def do_graft(%__MODULE__{} = left, args, opts, caller) do
+    validate!(left)
+
     node_specs = Keyword.get(args, :nodes, [])
     rel_specs = Keyword.get(args, :relationships, [])
 
-    validate_graft_node_uuids!(node_specs)
+    validate_graft_node_specs!(node_specs)
     validate_graft_unique_keys!(node_specs)
 
     left_by_uuid = Map.new(left.graph.nodes, &{&1.uuid, &1})
@@ -272,6 +457,7 @@ defmodule Artefact do
     key_map = Map.merge(bind_key_map, new_key_map)
 
     validate_graft_rel_keys!(rel_specs, key_map)
+    validate_graft_no_new_islands!(rel_specs, bind_key_map, new_key_map)
 
     bind_updates =
       Map.new(bind_specs, fn {_key, node_opts} ->
@@ -329,21 +515,96 @@ defmodule Artefact do
       }
     }
 
-    build([
-      {:title, title},
-      {:description, description},
-      {:base_label, left.base_label},
-      {:graph, graph},
-      {:metadata, metadata}
-    ])
+    result =
+      build([
+        {:title, title},
+        {:description, description},
+        {:base_label, left.base_label},
+        {:graph, graph},
+        {:metadata, metadata}
+      ])
+
+    validate!(result)
+    result
   end
 
-  defp validate_graft_node_uuids!(node_specs) do
+  defp validate_graft_node_specs!(node_specs) do
     Enum.each(node_specs, fn {key, node_opts} ->
-      case Keyword.fetch(node_opts, :uuid) do
-        {:ok, _} -> :ok
-        :error -> raise ArgumentError, "graft: node #{inspect(key)} is missing required :uuid"
+      uuid =
+        case Keyword.fetch(node_opts, :uuid) do
+          {:ok, u} -> u
+          :error -> raise ArgumentError, "graft: node #{inspect(key)} is missing required :uuid"
+        end
+
+      unless Artefact.UUID.valid?(uuid) do
+        raise ArgumentError,
+              "graft: node #{inspect(key)} :uuid #{inspect(uuid)} is not a valid UUIDv7"
       end
+
+      case Keyword.fetch(node_opts, :labels) do
+        :error ->
+          :ok
+
+        {:ok, labels} ->
+          unless is_list(labels) and Enum.all?(labels, &is_binary/1) do
+            raise ArgumentError,
+                  "graft: node #{inspect(key)} :labels #{inspect(labels)} is not a list of strings"
+          end
+      end
+
+      case Keyword.fetch(node_opts, :properties) do
+        :error ->
+          :ok
+
+        {:ok, properties} ->
+          unless is_map(properties) do
+            raise ArgumentError,
+                  "graft: node #{inspect(key)} :properties #{inspect(properties)} is not a map"
+          end
+      end
+    end)
+  end
+
+  defp validate_graft_no_new_islands!(rel_specs, bind_key_map, new_key_map) do
+    bind_keys = Map.keys(bind_key_map)
+    new_keys = Map.keys(new_key_map)
+
+    if new_keys == [] do
+      :ok
+    else
+      adjacency =
+        Enum.reduce(rel_specs, %{}, fn spec, acc ->
+          f = Keyword.fetch!(spec, :from)
+          t = Keyword.fetch!(spec, :to)
+
+          acc
+          |> Map.update(f, MapSet.new([t]), &MapSet.put(&1, t))
+          |> Map.update(t, MapSet.new([f]), &MapSet.put(&1, f))
+        end)
+
+      anchored = reach(adjacency, MapSet.new(bind_keys))
+      islands = MapSet.difference(MapSet.new(new_keys), anchored)
+
+      if MapSet.size(islands) > 0 do
+        raise ArgumentError,
+              "graft: args introduces disconnected islands — these new node keys are not reachable from any bind-only key via args.relationships: " <>
+                inspect(Enum.sort(MapSet.to_list(islands)))
+      end
+    end
+  end
+
+  defp reach(adjacency, seeds) do
+    Enum.reduce(seeds, seeds, fn seed, visited ->
+      reach_from(adjacency, seed, visited)
+    end)
+  end
+
+  defp reach_from(adjacency, node, visited) do
+    visited = MapSet.put(visited, node)
+    neighbours = Map.get(adjacency, node, MapSet.new())
+
+    Enum.reduce(neighbours, visited, fn n, acc ->
+      if MapSet.member?(acc, n), do: acc, else: reach_from(adjacency, n, acc)
     end)
   end
 
@@ -399,6 +660,9 @@ defmodule Artefact do
 
   @doc false
   def do_harmonise(%__MODULE__{} = a1, %__MODULE__{} = a2, bindings, opts, caller) do
+    validate!(a1)
+    validate!(a2)
+
     if a1.uuid == a2.uuid do
       raise ArgumentError, "cannot harmonise an artefact with itself (uuid: #{a1.uuid})"
     end
@@ -487,7 +751,11 @@ defmodule Artefact do
       }
     }
 
-    build([{:title, title}, {:base_label, base_label}, {:graph, graph}, {:metadata, metadata}])
+    result =
+      build([{:title, title}, {:base_label, base_label}, {:graph, graph}, {:metadata, metadata}])
+
+    validate!(result)
+    result
   end
 
   @doc false
