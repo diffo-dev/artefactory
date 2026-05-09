@@ -78,42 +78,61 @@ Artefact.Arrows.to_json(us_two)
 
 ## Combining and Extending Artefacts
 
+Operations come in two variants: `op/n` returns `{:ok, %Artefact{}} | {:error, error}`; `op!/n` returns the artefact directly or raises the error struct. Use `!` in pipelines or when you'd rather let exceptions propagate; use the non-`!` form when you want to handle errors explicitly.
+
 ```elixir
 # compose — disjoint union, nodes remain independent
-combined = Artefact.compose(a1, a2)
+{:ok, combined} = Artefact.compose(a1, a2)
 
 # combine — pipeline-friendly union; bindings auto-found via shared uuid.
-# Delegates to harmonise. Raises MatchError if no shared nodes.
-my_knowing
-|> Artefact.combine(my_valuing)
-|> Artefact.combine(my_being)
-|> Artefact.combine(my_doing, title: "MeMind", description: "Mind of Me")
+# Returns {:error, %Artefact.Error.Operation{tag: :no_shared_bindings}}
+# if heart and other share no node uuids.
+result =
+  my_knowing
+  |> Artefact.combine!(my_valuing)
+  |> Artefact.combine!(my_being)
+  |> Artefact.combine!(my_doing, title: "MeMind", description: "Mind of Me")
 
 # harmonise — union via declared bindings.
 # Lower uuid wins identity, labels are unioned, left wins on property conflict.
 {:ok, bindings} = Artefact.Binding.find(a1, a2)
-harmonised = Artefact.harmonise(a1, a2, bindings)
+{:ok, harmonised} = Artefact.harmonise(a1, a2, bindings)
 
 # graft — extend an existing artefact inline with new nodes and
 # relationships. args matches Artefact.new's inline shape, but every
 # node MUST carry :uuid (no auto-find — uuid is the binding).
 # Nodes whose uuid lives in left bind to it (labels unioned, properties
 # merged left-wins). Nodes with new uuids are added.
-me_mind
-|> Artefact.graft(
-     [
-       nodes: [
-         {:me,          [uuid: "019ddb71-c70b-7b3e-83b1-58f4d0be2852"]},   # bind-only
-         {:stewardship, [labels: ["Knowing"], uuid: "019df318-698c-77d6-bc7b-ea041a019a7f"]}
+result =
+  me_mind
+  |> Artefact.graft!(
+       [
+         nodes: [
+           {:me,          [uuid: "019ddb71-c70b-7b3e-83b1-58f4d0be2852"]},
+           {:stewardship, [labels: ["Knowing"],
+                           uuid: "019df318-698c-77d6-bc7b-ea041a019a7f"]}
+         ],
+         relationships: [[from: :me, type: "KNOWING", to: :stewardship]]
        ],
-       relationships: [[from: :me, type: "KNOWING", to: :stewardship]]
-     ],
-     title: "MeMind + Stewardship",
-     description: "Stewardship grafted onto MeMind."
-   )
+       title: "MeMind + Stewardship",
+       description: "Stewardship grafted onto MeMind."
+     )
 ```
 
+Errors are `Splode`-typed structs — pattern-match on `Artefact.Error.Invalid` (validation-rule violations) or `Artefact.Error.Operation` (op-specific outcomes) to handle each case. See [`MIGRATION.md`](MIGRATION.md) for the full error shape table.
+
 Provenance is recorded automatically — every artefact carries metadata describing how it was created, including the calling module and, for derived artefacts, a summary of each source.
+
+## Validation
+
+```elixir
+Artefact.is_artefact?(value)         # boolean
+Artefact.is_valid?(artefact)         # boolean
+Artefact.validate(artefact)          # :ok | {:error, %Artefact.Error.Invalid{reasons: [...]}}
+Artefact.validate!(artefact)         # :ok | raises Artefact.Error.Invalid
+```
+
+Every operation validates its inputs and the produced artefact, so corruption fails at the call site rather than steps downstream.
 
 ## Importing from Arrows JSON
 

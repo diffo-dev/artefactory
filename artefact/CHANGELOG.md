@@ -5,6 +5,38 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## 0.2.0 — 2026-05-05 *(breaking)*
+
+### API shape
+
+- All public ops now have **two variants**:
+  - `new/1`, `compose/3`, `combine/3`, `harmonise/4`, `graft/3` return `{:ok, %Artefact{}} | {:error, error}`.
+  - `new!/1`, `compose!/3`, `combine!/3`, `harmonise!/4`, `graft!/3` return `%Artefact{}` directly or raise the error struct. Behaviour matches 0.1.5's raise-everywhere — the `!` variants are the gentle migration path.
+- `validate/1` shape: `:ok | {:error, %Artefact.Error.Invalid{reasons: [...]}}` (was `{:error, [reason_strings]}`).
+- `validate!/1` raises `Artefact.Error.Invalid` (was `ArgumentError`).
+- Closes [#23], [#25].
+
+### Errors as structured values
+
+- New `:splode` runtime dependency (`{:splode, "~> 0.3"}`).
+- `Artefact.Error` — Splode root with two error classes (`:invalid`, `:operation`).
+- `Artefact.Error.Invalid` — validation rule violations; `:reasons` field carries the list of human-readable strings.
+- `Artefact.Error.Operation` — op-specific outcomes; `:op`, `:tag`, `:details` fields. See `MIGRATION.md` for the full per-op tag table.
+- Errors are real Elixir exceptions — raisable by the `!` variants, pattern-matchable as struct values from the non-`!` variants, and aggregatable by Splode-using callers (e.g. UsTwo libraries).
+
+### Module reorg (internal)
+
+- `Artefact.Op` — implementation home for the operations.
+- `Artefact.Validator` — implementation home for validation rules; surfaced via `defdelegate` from `Artefact`.
+- The `Artefact` module is now a thin macro facade plus the `%Artefact{}` struct definition. Future internal refactors won't churn the consumer-visible surface.
+
+### Migration
+
+See [`MIGRATION.md`](MIGRATION.md) for the migration guide. TL;DR — append `!` to every op call and you're done; use the non-`!` variant + `with`/`case` if you want explicit error handling.
+
+[#23]: https://github.com/diffo-dev/artefactory/issues/23
+[#25]: https://github.com/diffo-dev/artefactory/issues/25
+
 ## 0.1.5 — 2026-05-05
 
 - `Artefact.is_artefact?/1`, `Artefact.is_valid?/1`, `Artefact.validate/1`, `Artefact.validate!/1` — public validation API. Closes [#26], [#27]

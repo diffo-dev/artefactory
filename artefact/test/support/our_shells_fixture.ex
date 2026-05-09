@@ -71,7 +71,7 @@ defmodule Artefact.Test.Fixtures.OurShells do
          uuid: @association_uuid
        ]}
 
-    Artefact.new(
+    Artefact.new!(
       title: "Our Shells",
       description: "Our Shells help us value Beings.",
       nodes: [me, valuing, beings, shells, council, core, association],

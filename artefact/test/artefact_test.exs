@@ -19,12 +19,12 @@ defmodule ArtefactTest do
     do: %Artefact.Node{id: "n1", uuid: uuid, labels: ["Other"], properties: %{}}
 
   defp artefact_with(nodes) do
-    Artefact.new(graph: %Artefact.Graph{nodes: nodes, relationships: []})
+    Artefact.new!(graph: %Artefact.Graph{nodes: nodes, relationships: []})
   end
 
   describe "provenance" do
     test "new records :struct provenance with calling module" do
-      a = Artefact.new()
+      a = Artefact.new!()
       assert %{provenance: %{source: :struct, module: ArtefactTest}} = a.metadata
     end
 
@@ -41,9 +41,9 @@ defmodule ArtefactTest do
     end
 
     test "compose records :composed provenance with left and right title, base_label, uuid and provenance" do
-      a1 = Artefact.new()
-      a2 = Artefact.new()
-      composed = Artefact.compose(a1, a2)
+      a1 = Artefact.new!()
+      a2 = Artefact.new!()
+      composed = Artefact.compose!(a1, a2)
 
       assert %{
                provenance: %{
@@ -76,19 +76,19 @@ defmodule ArtefactTest do
 
     test "harmonise records :harmonised provenance with left and right title, base_label, uuid and provenance" do
       a1 =
-        Artefact.new(
+        Artefact.new!(
           base_label: "LeftArtefact",
           graph: %Artefact.Graph{nodes: [shared_node()], relationships: []}
         )
 
       a2 =
-        Artefact.new(
+        Artefact.new!(
           base_label: "RightArtefact",
           graph: %Artefact.Graph{nodes: [shared_node()], relationships: []}
         )
 
       {:ok, bindings} = Artefact.Binding.find(a1, a2)
-      result = Artefact.harmonise(a1, a2, bindings)
+      result = Artefact.harmonise!(a1, a2, bindings)
 
       assert %{
                provenance: %{
@@ -123,7 +123,7 @@ defmodule ArtefactTest do
   describe "Artefact.new/1 — inline nodes and relationships" do
     test "builds nodes with sequential ids" do
       a =
-        Artefact.new(
+        Artefact.new!(
           nodes: [
             matt: [labels: ["Agent", "Me"], properties: %{"name" => "Matt"}],
             claude: [labels: ["Agent", "You"], properties: %{"name" => "Claude"}]
@@ -139,7 +139,7 @@ defmodule ArtefactTest do
 
     test "nodes have correct labels and properties" do
       a =
-        Artefact.new(
+        Artefact.new!(
           nodes: [
             matt: [labels: ["Agent", "Me"], properties: %{"name" => "Matt"}],
             claude: [labels: ["Agent", "You"], properties: %{"name" => "Claude"}]
@@ -155,7 +155,7 @@ defmodule ArtefactTest do
     end
 
     test "nodes get auto-generated uuids" do
-      a = Artefact.new(nodes: [n: [labels: ["X"]]], relationships: [])
+      a = Artefact.new!(nodes: [n: [labels: ["X"]]], relationships: [])
       [node] = a.graph.nodes
       assert is_binary(node.uuid)
       assert String.length(node.uuid) == 36
@@ -163,14 +163,14 @@ defmodule ArtefactTest do
 
     test "uuid option is preserved" do
       fixed_uuid = "019da897-f2de-77ca-b5a4-40f0c3730943"
-      a = Artefact.new(nodes: [n: [labels: [], uuid: fixed_uuid]], relationships: [])
+      a = Artefact.new!(nodes: [n: [labels: [], uuid: fixed_uuid]], relationships: [])
       [node] = a.graph.nodes
       assert node.uuid == fixed_uuid
     end
 
     test "builds relationship resolving atom keys to ids" do
       a =
-        Artefact.new(
+        Artefact.new!(
           nodes: [
             matt: [labels: ["Agent"]],
             claude: [labels: ["Agent"]]
@@ -188,7 +188,7 @@ defmodule ArtefactTest do
 
     test "relationship properties default to empty map" do
       a =
-        Artefact.new(
+        Artefact.new!(
           nodes: [a: [labels: []], b: [labels: []]],
           relationships: [[from: :a, type: "KNOWS", to: :b]]
         )
@@ -199,7 +199,7 @@ defmodule ArtefactTest do
 
     test "relationship properties are set when provided" do
       a =
-        Artefact.new(
+        Artefact.new!(
           nodes: [a: [labels: []], b: [labels: []]],
           relationships: [[from: :a, type: "KNOWS", to: :b, properties: %{"since" => "2024"}]]
         )
@@ -209,13 +209,13 @@ defmodule ArtefactTest do
     end
 
     test "empty nodes and relationships produces empty graph" do
-      a = Artefact.new(title: "Empty", nodes: [], relationships: [])
+      a = Artefact.new!(title: "Empty", nodes: [], relationships: [])
       assert a.graph.nodes == []
       assert a.graph.relationships == []
     end
 
     test "no nodes or relationships key leaves graph as default" do
-      a = Artefact.new(title: "NoGraph")
+      a = Artefact.new!(title: "NoGraph")
       assert a.graph == %Artefact.Graph{}
     end
   end
@@ -223,7 +223,7 @@ defmodule ArtefactTest do
   describe "Artefact.new/1 — inline nodes and relationships — multiple relationships" do
     setup do
       a =
-        Artefact.new(
+        Artefact.new!(
           nodes: [x: [labels: ["X"]], y: [labels: ["Y"]], z: [labels: ["Z"]]],
           relationships: [
             [from: :x, type: "NEXT", to: :y],
@@ -259,7 +259,7 @@ defmodule ArtefactTest do
       from_json = Artefact.Arrows.from_json!(json)
 
       from_struct =
-        Artefact.new(
+        Artefact.new!(
           title: "UsTwo",
           base_label: "UsTwo",
           nodes: [
@@ -483,7 +483,7 @@ defmodule ArtefactTest do
       a1 = artefact_nodes([n_a])
       a2 = artefact_nodes([n_b])
       {:ok, bindings} = Artefact.Binding.find(a1, a2)
-      result = Artefact.harmonise(a1, a2, bindings)
+      result = Artefact.harmonise!(a1, a2, bindings)
       [merged] = result.graph.nodes
       assert merged.properties == %{"key_a" => "from_a", "key_b" => "from_b"}
     end
@@ -494,7 +494,7 @@ defmodule ArtefactTest do
       a1 = artefact_nodes([n_a])
       a2 = artefact_nodes([n_b])
       {:ok, bindings} = Artefact.Binding.find(a1, a2)
-      result = Artefact.harmonise(a1, a2, bindings)
+      result = Artefact.harmonise!(a1, a2, bindings)
       [merged] = result.graph.nodes
       assert merged.properties == %{"key" => "same"}
     end
@@ -505,7 +505,7 @@ defmodule ArtefactTest do
       a1 = artefact_nodes([n_a])
       a2 = artefact_nodes([n_b])
       {:ok, bindings} = Artefact.Binding.find(a1, a2)
-      result = Artefact.harmonise(a1, a2, bindings)
+      result = Artefact.harmonise!(a1, a2, bindings)
       [merged] = result.graph.nodes
       assert merged.properties["key"] == "left"
     end
@@ -516,7 +516,7 @@ defmodule ArtefactTest do
       a1 = artefact_nodes([n_a])
       a2 = artefact_nodes([n_b])
       {:ok, bindings} = Artefact.Binding.find(a1, a2)
-      result = Artefact.harmonise(a1, a2, bindings)
+      result = Artefact.harmonise!(a1, a2, bindings)
       [merged] = result.graph.nodes
       assert Enum.sort(merged.labels) == ["LabelA", "LabelB"]
     end
@@ -539,29 +539,45 @@ defmodule ArtefactTest do
       a1 = artefact_nodes([n_a])
       a2 = artefact_nodes([n_b])
       {:ok, bindings} = Artefact.Binding.find(a1, a2)
-      result = Artefact.harmonise(a1, a2, bindings)
+      result = Artefact.harmonise!(a1, a2, bindings)
       [merged] = result.graph.nodes
       assert Enum.sort(merged.labels) == ["OnlyA", "OnlyB", "Shared"]
     end
   end
 
   describe "Artefact.harmonise/4 — guards" do
-    test "raises when harmonising an artefact with itself" do
+    test "returns :self_harmonise when harmonising an artefact with itself" do
       a = artefact_with([shared_node()])
       {:ok, bindings} = Artefact.Binding.find(a, a)
 
-      assert_raise ArgumentError, ~r/cannot harmonise an artefact with itself/, fn ->
-        Artefact.harmonise(a, a, bindings)
+      assert {:error,
+              %Artefact.Error.Operation{
+                op: :harmonise,
+                tag: :self_harmonise,
+                details: %{uuid: uuid}
+              }} = Artefact.harmonise(a, a, bindings)
+      assert uuid == a.uuid
+    end
+
+    test "harmonise! raises Artefact.Error.Operation on self-harmonise" do
+      a = artefact_with([shared_node()])
+      {:ok, bindings} = Artefact.Binding.find(a, a)
+
+      assert_raise Artefact.Error.Operation, ~r/harmonise: self_harmonise/, fn ->
+        Artefact.harmonise!(a, a, bindings)
       end
     end
 
-    test "raises when both artefacts have the same base_label" do
-      a1 = Artefact.new(base_label: "Same")
-      a2 = Artefact.new(base_label: "Same")
+    test "returns :same_base_label when both artefacts have the same base_label" do
+      a1 = Artefact.new!(base_label: "Same")
+      a2 = Artefact.new!(base_label: "Same")
 
-      assert_raise ArgumentError, ~r/cannot harmonise artefacts with the same base_label/, fn ->
-        Artefact.harmonise(a1, a2, [])
-      end
+      assert {:error,
+              %Artefact.Error.Operation{
+                op: :harmonise,
+                tag: :same_base_label,
+                details: %{base_label: "Same"}
+              }} = Artefact.harmonise(a1, a2, [])
     end
   end
 
@@ -610,7 +626,7 @@ defmodule ArtefactTest do
         ])
 
       {:ok, bindings} = Artefact.Binding.find(a1, a2)
-      result = Artefact.harmonise(a1, a2, bindings)
+      result = Artefact.harmonise!(a1, a2, bindings)
       assert length(result.graph.relationships) == 1
     end
 
@@ -638,7 +654,7 @@ defmodule ArtefactTest do
         ])
 
       {:ok, bindings} = Artefact.Binding.find(a1, a2)
-      result = Artefact.harmonise(a1, a2, bindings)
+      result = Artefact.harmonise!(a1, a2, bindings)
       assert length(result.graph.relationships) == 2
     end
 
@@ -666,7 +682,7 @@ defmodule ArtefactTest do
         ])
 
       {:ok, bindings} = Artefact.Binding.find(a1, a2)
-      result = Artefact.harmonise(a1, a2, bindings)
+      result = Artefact.harmonise!(a1, a2, bindings)
       assert length(result.graph.relationships) == 2
     end
 
@@ -694,7 +710,7 @@ defmodule ArtefactTest do
         ])
 
       {:ok, bindings} = Artefact.Binding.find(a1, a2)
-      result = Artefact.harmonise(a1, a2, bindings)
+      result = Artefact.harmonise!(a1, a2, bindings)
       [rel] = result.graph.relationships
       assert rel.properties["since"] == "2020"
       assert rel.properties["trust"] == "high"
@@ -1000,7 +1016,7 @@ defmodule ArtefactTest do
   describe "Artefact.Mermaid.export/2 — escapes and edge cases" do
     test "falls back to node id when no name property is present" do
       a =
-        Artefact.new(
+        Artefact.new!(
           base_label: "Bare",
           nodes: [n: [labels: ["X"]]],
           relationships: []
@@ -1011,7 +1027,7 @@ defmodule ArtefactTest do
 
     test "uses name only when no semantic labels remain" do
       a =
-        Artefact.new(
+        Artefact.new!(
           base_label: "Solo",
           nodes: [n: [labels: ["Solo"], properties: %{"name" => "alone"}]],
           relationships: []
@@ -1024,7 +1040,7 @@ defmodule ArtefactTest do
 
     test "escapes double quotes in node names" do
       a =
-        Artefact.new(
+        Artefact.new!(
           nodes: [q: [labels: [], properties: %{"name" => ~s|she said "hi"|}]],
           relationships: []
         )
@@ -1034,7 +1050,7 @@ defmodule ArtefactTest do
 
     test "escapes pipes in relationship type" do
       a =
-        Artefact.new(
+        Artefact.new!(
           nodes: [a: [labels: []], b: [labels: []]],
           relationships: [[from: :a, type: "HAS|PIPE", to: :b]]
         )
@@ -1043,13 +1059,13 @@ defmodule ArtefactTest do
     end
 
     test "empty untitled graph still emits a header" do
-      a = Artefact.new(title: nil, nodes: [], relationships: [])
+      a = Artefact.new!(title: nil, nodes: [], relationships: [])
       assert Artefact.Mermaid.export(a) == "graph LR"
     end
 
     test "untitled artefact omits front-matter and accTitle" do
       a =
-        Artefact.new(
+        Artefact.new!(
           title: nil,
           nodes: [n: [labels: ["X"]]],
           relationships: []
@@ -1062,34 +1078,34 @@ defmodule ArtefactTest do
     end
 
     test "YAML-quotes a title containing a colon" do
-      a = Artefact.new(title: "Sand Talk: a yarn", nodes: [], relationships: [])
+      a = Artefact.new!(title: "Sand Talk: a yarn", nodes: [], relationships: [])
       assert String.contains?(Artefact.Mermaid.export(a), ~s|title: "Sand Talk: a yarn"|)
     end
 
     test "YAML-quotes and escapes a title with a double quote" do
-      a = Artefact.new(title: ~s|she said "hi"|, nodes: [], relationships: [])
+      a = Artefact.new!(title: ~s|she said "hi"|, nodes: [], relationships: [])
       assert String.contains?(Artefact.Mermaid.export(a), ~s|title: "she said \\"hi\\""|)
     end
 
     test "accTitle escaping is independent of YAML quoting" do
-      a = Artefact.new(title: "Sand Talk: a yarn", nodes: [], relationships: [])
+      a = Artefact.new!(title: "Sand Talk: a yarn", nodes: [], relationships: [])
       assert String.contains?(Artefact.Mermaid.export(a), "  accTitle: Sand Talk: a yarn")
     end
   end
 
   describe "Artefact.new/1 — :description option" do
     test "defaults to nil when not provided" do
-      a = Artefact.new()
+      a = Artefact.new!()
       assert a.description == nil
     end
 
     test "stores the description when provided" do
-      a = Artefact.new(description: "the simplest true thing about us_two")
+      a = Artefact.new!(description: "the simplest true thing about us_two")
       assert a.description == "the simplest true thing about us_two"
     end
 
     test "description is independent of title" do
-      a = Artefact.new(title: "UsTwo", description: "Me toward You")
+      a = Artefact.new!(title: "UsTwo", description: "Me toward You")
       assert a.title == "UsTwo"
       assert a.description == "Me toward You"
     end
@@ -1098,7 +1114,7 @@ defmodule ArtefactTest do
   describe "Artefact.Arrows round-trip — description" do
     test "preserves a set description" do
       original =
-        Artefact.new(
+        Artefact.new!(
           title: "UsTwo",
           description: "the simplest true thing",
           base_label: "UsTwo",
@@ -1111,7 +1127,7 @@ defmodule ArtefactTest do
     end
 
     test "preserves a nil description" do
-      original = Artefact.new(title: "Bare", nodes: [], relationships: [])
+      original = Artefact.new!(title: "Bare", nodes: [], relationships: [])
       assert original.description == nil
 
       round_tripped = original |> Artefact.Arrows.to_json() |> Artefact.Arrows.from_json!()
@@ -1122,7 +1138,7 @@ defmodule ArtefactTest do
   describe "Artefact.Mermaid.export/2 — description" do
     test "emits accDescr inline when description is single-line" do
       a =
-        Artefact.new(
+        Artefact.new!(
           title: "UsTwo",
           description: "Me toward You",
           nodes: [],
@@ -1134,7 +1150,7 @@ defmodule ArtefactTest do
 
     test "uses block form when description contains newlines" do
       a =
-        Artefact.new(
+        Artefact.new!(
           title: "UsTwo",
           description: "first line\nsecond line",
           nodes: [],
@@ -1147,14 +1163,14 @@ defmodule ArtefactTest do
     end
 
     test "omits accDescr when description is nil" do
-      a = Artefact.new(title: "Titled but undescribed", nodes: [], relationships: [])
+      a = Artefact.new!(title: "Titled but undescribed", nodes: [], relationships: [])
       mmd = Artefact.Mermaid.export(a)
       refute String.contains?(mmd, "accDescr")
     end
 
     test "accDescr appears after accTitle and before nodes" do
       a =
-        Artefact.new(
+        Artefact.new!(
           title: "Order",
           description: "matters",
           nodes: [n: [labels: ["X"]]],
@@ -1192,7 +1208,7 @@ defmodule ArtefactTest do
       heart = combine_artefact("Knowing", @uuid_shared)
       other = combine_artefact("Valuing", @uuid_shared)
 
-      result = Artefact.combine(heart, other)
+      result = Artefact.combine!(heart, other)
       assert length(result.graph.nodes) == 1
     end
 
@@ -1200,7 +1216,7 @@ defmodule ArtefactTest do
       heart = combine_artefact("Knowing", @uuid_shared)
       other = combine_artefact("Valuing", @uuid_shared)
 
-      result = Artefact.combine(heart, other)
+      result = Artefact.combine!(heart, other)
       assert result.base_label == "KnowingValuing"
     end
 
@@ -1208,7 +1224,7 @@ defmodule ArtefactTest do
       heart = combine_artefact("Knowing", @uuid_shared)
       other = combine_artefact("Valuing", @uuid_shared)
 
-      result = Artefact.combine(heart, other)
+      result = Artefact.combine!(heart, other)
       assert result.title == "KnowingValuing"
     end
 
@@ -1216,7 +1232,7 @@ defmodule ArtefactTest do
       heart = combine_artefact("Knowing", @uuid_shared)
       other = combine_artefact("Valuing", @uuid_shared)
 
-      result = Artefact.combine(heart, other)
+      result = Artefact.combine!(heart, other)
       assert result.description == nil
     end
 
@@ -1224,7 +1240,7 @@ defmodule ArtefactTest do
       heart = combine_artefact("Knowing", @uuid_shared)
       other = combine_artefact("Valuing", @uuid_shared)
 
-      result = Artefact.combine(heart, other, title: "Custom")
+      result = Artefact.combine!(heart, other, title: "Custom")
       assert result.title == "Custom"
     end
 
@@ -1232,7 +1248,7 @@ defmodule ArtefactTest do
       heart = combine_artefact("Knowing", @uuid_shared)
       other = combine_artefact("Valuing", @uuid_shared)
 
-      result = Artefact.combine(heart, other, description: "yarned")
+      result = Artefact.combine!(heart, other, description: "yarned")
       assert result.description == "yarned"
     end
 
@@ -1240,7 +1256,7 @@ defmodule ArtefactTest do
       heart = combine_artefact("Knowing", @uuid_shared)
       other = combine_artefact("Valuing", @uuid_shared)
 
-      result = Artefact.combine(heart, other, title: "MeMind", description: "Mind of Me")
+      result = Artefact.combine!(heart, other, title: "MeMind", description: "Mind of Me")
       assert result.title == "MeMind"
       assert result.description == "Mind of Me"
     end
@@ -1250,7 +1266,7 @@ defmodule ArtefactTest do
       b = combine_artefact("Valuing", @uuid_shared)
       c = combine_artefact("Being", @uuid_shared)
 
-      result = a |> Artefact.combine(b) |> Artefact.combine(c)
+      result = a |> Artefact.combine!(b) |> Artefact.combine!(c)
       assert result.base_label == "KnowingValuingBeing"
       assert length(result.graph.nodes) == 1
     end
@@ -1262,8 +1278,8 @@ defmodule ArtefactTest do
 
       result =
         a
-        |> Artefact.combine(b)
-        |> Artefact.combine(c, title: "MeMind", description: "Mind of Me")
+        |> Artefact.combine!(b)
+        |> Artefact.combine!(c, title: "MeMind", description: "Mind of Me")
 
       assert result.title == "MeMind"
       assert result.description == "Mind of Me"
@@ -1273,15 +1289,25 @@ defmodule ArtefactTest do
       heart = combine_artefact("Knowing", @uuid_shared)
       other = combine_artefact("Valuing", @uuid_shared)
 
-      result = Artefact.combine(heart, other)
+      result = Artefact.combine!(heart, other)
       assert %{provenance: %{source: :harmonised, module: ArtefactTest}} = result.metadata
     end
 
-    test "raises when artefacts have no shared nodes" do
+    test "returns :no_shared_bindings when artefacts have no shared nodes" do
       heart = combine_artefact("Knowing", "019d0000-0000-7000-8000-000000000010")
       other = combine_artefact("Valuing", "019d0000-0000-7000-8000-000000000020")
 
-      assert_raise MatchError, fn -> Artefact.combine(heart, other) end
+      assert {:error, %Artefact.Error.Operation{op: :combine, tag: :no_shared_bindings}} =
+               Artefact.combine(heart, other)
+    end
+
+    test "combine! raises Artefact.Error.Operation when no shared nodes" do
+      heart = combine_artefact("Knowing", "019d0000-0000-7000-8000-000000000010")
+      other = combine_artefact("Valuing", "019d0000-0000-7000-8000-000000000020")
+
+      assert_raise Artefact.Error.Operation, ~r/combine: no_shared_bindings/, fn ->
+        Artefact.combine!(heart, other)
+      end
     end
   end
 
@@ -1292,7 +1318,7 @@ defmodule ArtefactTest do
       left = OurShells.our_shells()
 
       result =
-        Artefact.graft(left, OurShells.manifesto_args(),
+        Artefact.graft!(left, OurShells.manifesto_args(),
           title: "Our Shells and Manifesto",
           description: "Our Shells and Manifesto shape our Association Knowing."
         )
@@ -1414,7 +1440,7 @@ defmodule ArtefactTest do
 
     test "title and description fall back to left when opts omits them" do
       left = OurShells.our_shells()
-      result = Artefact.graft(left, OurShells.manifesto_args())
+      result = Artefact.graft!(left, OurShells.manifesto_args())
 
       assert result.title == left.title
       assert result.description == left.description
@@ -1422,14 +1448,14 @@ defmodule ArtefactTest do
 
     test "right provenance carries nil when opts omits title and description" do
       left = OurShells.our_shells()
-      result = Artefact.graft(left, OurShells.manifesto_args())
+      result = Artefact.graft!(left, OurShells.manifesto_args())
 
       assert %{provenance: %{right: %{title: nil, description: nil}}} = result.metadata
     end
 
     test "base_label in opts is ignored — left's base_label always wins" do
       left = OurShells.our_shells()
-      result = Artefact.graft(left, OurShells.manifesto_args(), base_label: "ShouldBeIgnored")
+      result = Artefact.graft!(left, OurShells.manifesto_args(), base_label: "ShouldBeIgnored")
 
       assert result.base_label == left.base_label
     end
@@ -1439,7 +1465,7 @@ defmodule ArtefactTest do
     @left_uuid "019d0000-0000-7000-8000-0000000000aa"
 
     defp single_node_artefact(labels, properties) do
-      Artefact.new(
+      Artefact.new!(
         title: "Left",
         nodes: [n: [labels: labels, properties: properties, uuid: @left_uuid]],
         relationships: []
@@ -1450,7 +1476,7 @@ defmodule ArtefactTest do
       left = single_node_artefact(["LeftLabel"], %{})
 
       result =
-        Artefact.graft(left,
+        Artefact.graft!(left,
           nodes: [n: [labels: ["RightLabel"], uuid: @left_uuid]],
           relationships: []
         )
@@ -1463,7 +1489,7 @@ defmodule ArtefactTest do
       left = single_node_artefact(["Shared", "OnlyLeft"], %{})
 
       result =
-        Artefact.graft(left,
+        Artefact.graft!(left,
           nodes: [n: [labels: ["Shared", "OnlyRight"], uuid: @left_uuid]],
           relationships: []
         )
@@ -1476,7 +1502,7 @@ defmodule ArtefactTest do
       left = single_node_artefact([], %{"left_key" => "L"})
 
       result =
-        Artefact.graft(left,
+        Artefact.graft!(left,
           nodes: [n: [properties: %{"right_key" => "R"}, uuid: @left_uuid]],
           relationships: []
         )
@@ -1489,7 +1515,7 @@ defmodule ArtefactTest do
       left = single_node_artefact([], %{"shared_key" => "from_left"})
 
       result =
-        Artefact.graft(left,
+        Artefact.graft!(left,
           nodes: [n: [properties: %{"shared_key" => "from_right"}, uuid: @left_uuid]],
           relationships: []
         )
@@ -1502,7 +1528,7 @@ defmodule ArtefactTest do
       left = single_node_artefact(["X"], %{})
 
       result =
-        Artefact.graft(left,
+        Artefact.graft!(left,
           nodes: [n: [uuid: @left_uuid]],
           relationships: []
         )
@@ -1517,7 +1543,7 @@ defmodule ArtefactTest do
 
     test "args relationship matching an existing left relationship is deduped (left properties win)" do
       left =
-        Artefact.new(
+        Artefact.new!(
           title: "Pair",
           nodes: [
             a: [labels: [], properties: %{}, uuid: @uuid_a],
@@ -1527,7 +1553,7 @@ defmodule ArtefactTest do
         )
 
       result =
-        Artefact.graft(left,
+        Artefact.graft!(left,
           nodes: [
             a: [uuid: @uuid_a],
             b: [uuid: @uuid_b]
@@ -1552,42 +1578,63 @@ defmodule ArtefactTest do
   describe "Artefact.graft/3 — guards" do
     alias Artefact.Test.Fixtures.OurShells
 
-    test "raises when an args node is missing :uuid" do
+    test "returns :missing_uuid when an args node is missing :uuid" do
       left = OurShells.our_shells()
 
-      assert_raise ArgumentError, ~r/graft: node :without_uuid is missing required :uuid/, fn ->
-        Artefact.graft(left,
+      assert {:error,
+              %Artefact.Error.Operation{
+                op: :graft,
+                tag: :missing_uuid,
+                details: %{key: :without_uuid}
+              }} =
+               Artefact.graft(left,
+                 nodes: [without_uuid: [labels: ["Knowing"]]],
+                 relationships: []
+               )
+    end
+
+    test "returns :duplicate_keys when args has duplicate node keys" do
+      left = OurShells.our_shells()
+
+      assert {:error,
+              %Artefact.Error.Operation{
+                op: :graft,
+                tag: :duplicate_keys,
+                details: %{keys: [:dup]}
+              }} =
+               Artefact.graft(left,
+                 nodes: [
+                   {:dup, [uuid: "019d0000-0000-7000-8000-000000000c01"]},
+                   {:dup, [uuid: "019d0000-0000-7000-8000-000000000c02"]}
+                 ],
+                 relationships: []
+               )
+    end
+
+    test "returns :unknown_rel_key when a relationship references a key not in args.nodes" do
+      left = OurShells.our_shells()
+
+      assert {:error,
+              %Artefact.Error.Operation{
+                op: :graft,
+                tag: :unknown_rel_key,
+                details: %{key: :ghost}
+              }} =
+               Artefact.graft(left,
+                 nodes: [{:me, [uuid: OurShells.me_uuid()]}],
+                 relationships: [[from: :me, type: "KNOWING", to: :ghost]]
+               )
+    end
+
+    test "graft! raises Artefact.Error.Operation on missing uuid" do
+      left = OurShells.our_shells()
+
+      assert_raise Artefact.Error.Operation, ~r/graft: missing_uuid/, fn ->
+        Artefact.graft!(left,
           nodes: [without_uuid: [labels: ["Knowing"]]],
           relationships: []
         )
       end
-    end
-
-    test "raises when args has duplicate node keys" do
-      left = OurShells.our_shells()
-
-      assert_raise ArgumentError, ~r/graft: duplicate node keys/, fn ->
-        Artefact.graft(left,
-          nodes: [
-            {:dup, [uuid: "019d0000-0000-7000-8000-000000000c01"]},
-            {:dup, [uuid: "019d0000-0000-7000-8000-000000000c02"]}
-          ],
-          relationships: []
-        )
-      end
-    end
-
-    test "raises when a relationship references a key not in args.nodes" do
-      left = OurShells.our_shells()
-
-      assert_raise ArgumentError,
-                   ~r/graft: relationship references unknown node key :ghost/,
-                   fn ->
-                     Artefact.graft(left,
-                       nodes: [{:me, [uuid: OurShells.me_uuid()]}],
-                       relationships: [[from: :me, type: "KNOWING", to: :ghost]]
-                     )
-                   end
     end
   end
 
@@ -1628,7 +1675,7 @@ defmodule ArtefactTest do
 
   describe "Artefact.is_artefact?/1" do
     test "true for an %Artefact{} struct" do
-      assert Artefact.is_artefact?(Artefact.new())
+      assert Artefact.is_artefact?(Artefact.new!())
     end
 
     test "false for non-artefact values" do
@@ -1656,38 +1703,39 @@ defmodule ArtefactTest do
     end
 
     test "fresh Artefact.new is valid" do
-      assert Artefact.is_valid?(Artefact.new())
-      assert Artefact.validate(Artefact.new()) == :ok
+      assert Artefact.is_valid?(Artefact.new!())
+      assert Artefact.validate(Artefact.new!()) == :ok
     end
 
     test "non-artefact returns error" do
-      assert {:error, ["not an %Artefact{} struct"]} = Artefact.validate(%{})
+      assert {:error, %Artefact.Error.Invalid{reasons: ["not an %Artefact{} struct"]}} =
+               Artefact.validate(%{})
     end
 
     test "rejects empty uuid on the artefact itself" do
-      a = %{Artefact.new() | uuid: ""}
-      assert {:error, reasons} = Artefact.validate(a)
+      a = %{Artefact.new!() | uuid: ""}
+      assert {:error, %Artefact.Error.Invalid{reasons: reasons}} = Artefact.validate(a)
       assert Enum.any?(reasons, &(&1 =~ "uuid is not a valid UUIDv7"))
     end
 
     test "rejects non-list labels on a node" do
       n = %Artefact.Node{id: "n0", uuid: @good_uuid_a, labels: "Engine", properties: %{}}
       a = valid_artefact_with([n], [])
-      assert {:error, reasons} = Artefact.validate(a)
+      assert {:error, %Artefact.Error.Invalid{reasons: reasons}} = Artefact.validate(a)
       assert Enum.any?(reasons, &(&1 =~ "labels is not a list of strings"))
     end
 
     test "rejects list-of-non-strings labels on a node" do
       n = %Artefact.Node{id: "n0", uuid: @good_uuid_a, labels: [:Engine], properties: %{}}
       a = valid_artefact_with([n], [])
-      assert {:error, reasons} = Artefact.validate(a)
+      assert {:error, %Artefact.Error.Invalid{reasons: reasons}} = Artefact.validate(a)
       assert Enum.any?(reasons, &(&1 =~ "labels is not a list of strings"))
     end
 
     test "rejects non-map properties on a node" do
       n = %Artefact.Node{id: "n0", uuid: @good_uuid_a, labels: [], properties: []}
       a = valid_artefact_with([n], [])
-      assert {:error, reasons} = Artefact.validate(a)
+      assert {:error, %Artefact.Error.Invalid{reasons: reasons}} = Artefact.validate(a)
       assert Enum.any?(reasons, &(&1 =~ "properties is not a map"))
     end
 
@@ -1703,7 +1751,7 @@ defmodule ArtefactTest do
       }
 
       a = valid_artefact_with([n], [r])
-      assert {:error, reasons} = Artefact.validate(a)
+      assert {:error, %Artefact.Error.Invalid{reasons: reasons}} = Artefact.validate(a)
       assert Enum.any?(reasons, &(&1 =~ ~s(from_id "ghost" not in graph)))
     end
 
@@ -1720,7 +1768,7 @@ defmodule ArtefactTest do
       }
 
       a = valid_artefact_with([n0, n1], [r])
-      assert {:error, reasons} = Artefact.validate(a)
+      assert {:error, %Artefact.Error.Invalid{reasons: reasons}} = Artefact.validate(a)
       assert Enum.any?(reasons, &(&1 =~ "type is not a non-empty string"))
     end
 
@@ -1728,7 +1776,7 @@ defmodule ArtefactTest do
       n0 = %Artefact.Node{id: "n0", uuid: @good_uuid_a, labels: [], properties: %{}}
       n1 = %Artefact.Node{id: "n1", uuid: @good_uuid_a, labels: [], properties: %{}}
       a = valid_artefact_with([n0, n1], [])
-      assert {:error, reasons} = Artefact.validate(a)
+      assert {:error, %Artefact.Error.Invalid{reasons: reasons}} = Artefact.validate(a)
       assert Enum.any?(reasons, &(&1 =~ "duplicate node uuids"))
     end
 
@@ -1736,7 +1784,7 @@ defmodule ArtefactTest do
       n0 = %Artefact.Node{id: "n0", uuid: @good_uuid_a, labels: [], properties: %{}}
       n1 = %Artefact.Node{id: "n0", uuid: @good_uuid_b, labels: [], properties: %{}}
       a = valid_artefact_with([n0, n1], [])
-      assert {:error, reasons} = Artefact.validate(a)
+      assert {:error, %Artefact.Error.Invalid{reasons: reasons}} = Artefact.validate(a)
       assert Enum.any?(reasons, &(&1 =~ "duplicate node ids"))
     end
 
@@ -1744,19 +1792,19 @@ defmodule ArtefactTest do
       n = %Artefact.Node{id: "n0", uuid: "", labels: [], properties: %{}}
       a = valid_artefact_with([n], [])
       refute Artefact.is_valid?(a)
-      assert Artefact.is_valid?(Artefact.new())
+      assert Artefact.is_valid?(Artefact.new!())
     end
   end
 
   describe "Artefact.validate!/1" do
     test ":ok for a valid artefact" do
-      assert Artefact.validate!(Artefact.new()) == :ok
+      assert Artefact.validate!(Artefact.new!()) == :ok
     end
 
-    test "raises ArgumentError with reasons for invalid artefact" do
-      a = %{Artefact.new() | uuid: ""}
+    test "raises Artefact.Error.Invalid with reasons for invalid artefact" do
+      a = %{Artefact.new!() | uuid: ""}
 
-      assert_raise ArgumentError,
+      assert_raise Artefact.Error.Invalid,
                    ~r/invalid artefact:.*uuid is not a valid UUIDv7/,
                    fn -> Artefact.validate!(a) end
     end
@@ -1765,88 +1813,106 @@ defmodule ArtefactTest do
   describe "Artefact.graft/3 — input rejection (validation)" do
     alias Artefact.Test.Fixtures.OurShells
 
-    test "raises when a node :uuid is empty string" do
+    test "returns :invalid_uuid when a node :uuid is empty string" do
       left = OurShells.our_shells()
 
-      assert_raise ArgumentError, ~r/:uuid "" is not a valid UUIDv7/, fn ->
-        Artefact.graft(left,
-          nodes: [bad: [labels: ["Knowing"], uuid: ""]],
-          relationships: []
-        )
-      end
+      assert {:error,
+              %Artefact.Error.Operation{
+                op: :graft,
+                tag: :invalid_uuid,
+                details: %{key: :bad, uuid: ""}
+              }} =
+               Artefact.graft(left,
+                 nodes: [bad: [labels: ["Knowing"], uuid: ""]],
+                 relationships: []
+               )
     end
 
-    test "raises when a node :uuid is malformed" do
+    test "returns :invalid_uuid when a node :uuid is malformed" do
       left = OurShells.our_shells()
 
-      assert_raise ArgumentError, ~r/is not a valid UUIDv7/, fn ->
-        Artefact.graft(left,
-          nodes: [bad: [labels: ["X"], uuid: "not-a-uuid"]],
-          relationships: []
-        )
-      end
+      assert {:error, %Artefact.Error.Operation{op: :graft, tag: :invalid_uuid}} =
+               Artefact.graft(left,
+                 nodes: [bad: [labels: ["X"], uuid: "not-a-uuid"]],
+                 relationships: []
+               )
     end
 
-    test "raises when a node :labels is not a list" do
+    test "returns :invalid_labels when a node :labels is not a list" do
       left = OurShells.our_shells()
 
-      assert_raise ArgumentError, ~r/:labels "Engine" is not a list of strings/, fn ->
-        Artefact.graft(left,
-          nodes: [bad: [labels: "Engine", uuid: "019d0000-0000-7000-8000-0000000000d1"]],
-          relationships: []
-        )
-      end
+      assert {:error,
+              %Artefact.Error.Operation{
+                op: :graft,
+                tag: :invalid_labels,
+                details: %{key: :bad, labels: "Engine"}
+              }} =
+               Artefact.graft(left,
+                 nodes: [
+                   bad: [labels: "Engine", uuid: "019d0000-0000-7000-8000-0000000000d1"]
+                 ],
+                 relationships: []
+               )
     end
 
-    test "raises when a node :properties is not a map" do
+    test "returns :invalid_properties when a node :properties is not a map" do
       left = OurShells.our_shells()
 
-      assert_raise ArgumentError, ~r/:properties.* is not a map/, fn ->
-        Artefact.graft(left,
-          nodes: [bad: [properties: [], uuid: "019d0000-0000-7000-8000-0000000000d2"]],
-          relationships: []
-        )
-      end
+      assert {:error, %Artefact.Error.Operation{op: :graft, tag: :invalid_properties}} =
+               Artefact.graft(left,
+                 nodes: [
+                   bad: [properties: [], uuid: "019d0000-0000-7000-8000-0000000000d2"]
+                 ],
+                 relationships: []
+               )
     end
   end
 
   describe "Artefact.graft/3 — no new islands (#29)" do
     alias Artefact.Test.Fixtures.OurShells
 
-    test "raises when a single new node has no relationship to a bind-only node" do
+    test "returns :islands when a single new node has no relationship to a bind-only node" do
       left = OurShells.our_shells()
 
-      assert_raise ArgumentError, ~r/disconnected islands/, fn ->
-        Artefact.graft(left,
-          nodes: [
-            {:me, [uuid: OurShells.me_uuid()]},
-            {:floating, [labels: ["X"], uuid: "019d0000-0000-7000-8000-0000000000e1"]}
-          ],
-          relationships: []
-        )
-      end
+      assert {:error,
+              %Artefact.Error.Operation{
+                op: :graft,
+                tag: :islands,
+                details: %{keys: [:floating]}
+              }} =
+               Artefact.graft(left,
+                 nodes: [
+                   {:me, [uuid: OurShells.me_uuid()]},
+                   {:floating, [labels: ["X"], uuid: "019d0000-0000-7000-8000-0000000000e1"]}
+                 ],
+                 relationships: []
+               )
     end
 
-    test "raises when new nodes form a chain disconnected from any bind-only node" do
+    test "returns :islands when new nodes form a chain disconnected from any bind-only" do
       left = OurShells.our_shells()
 
-      assert_raise ArgumentError, ~r/disconnected islands/, fn ->
-        Artefact.graft(left,
-          nodes: [
-            {:me, [uuid: OurShells.me_uuid()]},
-            {:b, [labels: ["X"], uuid: "019d0000-0000-7000-8000-0000000000e2"]},
-            {:c, [labels: ["X"], uuid: "019d0000-0000-7000-8000-0000000000e3"]}
-          ],
-          relationships: [[from: :b, type: "X", to: :c]]
-        )
-      end
+      assert {:error,
+              %Artefact.Error.Operation{
+                op: :graft,
+                tag: :islands,
+                details: %{keys: [:b, :c]}
+              }} =
+               Artefact.graft(left,
+                 nodes: [
+                   {:me, [uuid: OurShells.me_uuid()]},
+                   {:b, [labels: ["X"], uuid: "019d0000-0000-7000-8000-0000000000e2"]},
+                   {:c, [labels: ["X"], uuid: "019d0000-0000-7000-8000-0000000000e3"]}
+                 ],
+                 relationships: [[from: :b, type: "X", to: :c]]
+               )
     end
 
     test "passes when a new node connects directly to a bind-only node" do
       left = OurShells.our_shells()
 
       result =
-        Artefact.graft(left,
+        Artefact.graft!(left,
           nodes: [
             {:me, [uuid: OurShells.me_uuid()]},
             {:b, [labels: ["X"], uuid: "019d0000-0000-7000-8000-0000000000e4"]}
@@ -1861,7 +1927,7 @@ defmodule ArtefactTest do
       left = OurShells.our_shells()
 
       result =
-        Artefact.graft(left,
+        Artefact.graft!(left,
           nodes: [
             {:me, [uuid: OurShells.me_uuid()]},
             {:b, [labels: ["X"], uuid: "019d0000-0000-7000-8000-0000000000e5"]},
@@ -1880,7 +1946,7 @@ defmodule ArtefactTest do
       left = OurShells.our_shells()
 
       result =
-        Artefact.graft(left,
+        Artefact.graft!(left,
           nodes: [{:me, [uuid: OurShells.me_uuid()]}],
           relationships: []
         )
