@@ -27,7 +27,8 @@ defmodule Artefact.Error.Operation do
 
   use Splode.Error, fields: [:op, :tag, :details], class: :operation
 
-  def message(%{op: op, tag: tag, details: details}) when is_map(details) and map_size(details) > 0 do
+  def message(%{op: op, tag: tag, details: details})
+      when is_map(details) and map_size(details) > 0 do
     "#{op}: #{tag} #{inspect(details)}"
   end
 

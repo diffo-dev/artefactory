@@ -5,7 +5,7 @@ defmodule Artefact.MixProject do
   @moduledoc false
   use Mix.Project
 
-  @version "0.1.5"
+  @version "0.2.0"
   @github_url "https://github.com/diffo-dev/artefactory"
 
   def project do
@@ -25,7 +25,7 @@ defmodule Artefact.MixProject do
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
-  defp elixirc_paths(_),     do: ["lib"]
+  defp elixirc_paths(_), do: ["lib"]
 
   def application do
     [extra_applications: [:logger]]
@@ -42,7 +42,7 @@ defmodule Artefact.MixProject do
   defp package do
     [
       licenses: ["MIT"],
-      files: ~w(lib .formatter.exs mix.exs README* CHANGELOG* LICENSES),
+      files: ~w(lib .formatter.exs mix.exs README* CHANGELOG* MIGRATION* LICENSES),
       links: %{"GitHub" => @github_url}
     ]
   end
@@ -55,6 +55,7 @@ defmodule Artefact.MixProject do
       extras: [
         "README.md",
         "CHANGELOG.md",
+        "MIGRATION.md",
         {"LICENSES/MIT.txt", title: "License (MIT)"}
       ]
     ]

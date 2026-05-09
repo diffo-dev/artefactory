@@ -78,7 +78,9 @@ defmodule Artefact.Validator do
 
   defp check_string_or_nil(reasons, nil, _field), do: reasons
   defp check_string_or_nil(reasons, value, _field) when is_binary(value), do: reasons
-  defp check_string_or_nil(reasons, _value, field), do: ["#{field} is not a string or nil" | reasons]
+
+  defp check_string_or_nil(reasons, _value, field),
+    do: ["#{field} is not a string or nil" | reasons]
 
   defp check_graph(reasons, %Artefact.Graph{nodes: nodes, relationships: rels})
        when is_list(nodes) and is_list(rels) do
@@ -149,7 +151,10 @@ defmodule Artefact.Validator do
     reasons
     |> check(is_binary(r.id) and r.id != "", "#{p} id is not a non-empty string")
     |> check(is_binary(r.type) and r.type != "", "#{p} type is not a non-empty string")
-    |> check(MapSet.member?(node_ids, r.from_id), "#{p} from_id #{inspect(r.from_id)} not in graph")
+    |> check(
+      MapSet.member?(node_ids, r.from_id),
+      "#{p} from_id #{inspect(r.from_id)} not in graph"
+    )
     |> check(MapSet.member?(node_ids, r.to_id), "#{p} to_id #{inspect(r.to_id)} not in graph")
     |> check(is_map(r.properties), "#{p} properties is not a map")
   end
