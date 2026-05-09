@@ -5,6 +5,10 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## 0.2.0 — 2026-05-05
+
+- Bumps `artefact` requirement to `~> 0.2.0`. `ArtefactKino.new/1,2` continues to validate its input via `Artefact.validate!/1`, which now raises `Artefact.Error.Invalid` instead of `ArgumentError` when an invalid artefact is passed in. Behaviour is otherwise unchanged.
+
 ## 0.1.5 — 2026-05-05
 
 - `ArtefactKino.new/1,2` now calls `Artefact.validate!/1` on its input — a hand-built `%Artefact{}` with malformed fields (non-list labels, missing uuid, dangling relationship endpoint, etc.) raises `ArgumentError` with structured reasons instead of a cryptic render-time error. Closes [#28]. Bumps `artefact` requirement to `~> 0.1.5` for the new validation API.
