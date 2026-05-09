@@ -7,8 +7,16 @@ defmodule ArtefactTest do
 
   @fixtures Path.join(__DIR__, "data")
 
-  defp shared_node, do: %Artefact.Node{id: "n0", uuid: "019d0000-0000-7000-8000-000000000000", labels: ["Shared"], properties: %{}}
-  defp other_node(uuid), do: %Artefact.Node{id: "n1", uuid: uuid, labels: ["Other"], properties: %{}}
+  defp shared_node,
+    do: %Artefact.Node{
+      id: "n0",
+      uuid: "019d0000-0000-7000-8000-000000000000",
+      labels: ["Shared"],
+      properties: %{}
+    }
+
+  defp other_node(uuid),
+    do: %Artefact.Node{id: "n1", uuid: uuid, labels: ["Other"], properties: %{}}
 
   defp artefact_with(nodes) do
     Artefact.new(graph: %Artefact.Graph{nodes: nodes, relationships: []})
@@ -36,47 +44,93 @@ defmodule ArtefactTest do
       a1 = Artefact.new()
       a2 = Artefact.new()
       composed = Artefact.compose(a1, a2)
-      assert %{provenance: %{source: :composed, module: ArtefactTest,
-                             left:  %{title: left_title,  base_label: left_bl,  uuid: left_uuid,  provenance: left_prov},
-                             right: %{title: right_title, base_label: right_bl, uuid: right_uuid, provenance: right_prov}}} = composed.metadata
-      assert left_title  == a1.title
-      assert left_bl     == a1.base_label
-      assert left_uuid   == a1.uuid
+
+      assert %{
+               provenance: %{
+                 source: :composed,
+                 module: ArtefactTest,
+                 left: %{
+                   title: left_title,
+                   base_label: left_bl,
+                   uuid: left_uuid,
+                   provenance: left_prov
+                 },
+                 right: %{
+                   title: right_title,
+                   base_label: right_bl,
+                   uuid: right_uuid,
+                   provenance: right_prov
+                 }
+               }
+             } = composed.metadata
+
+      assert left_title == a1.title
+      assert left_bl == a1.base_label
+      assert left_uuid == a1.uuid
       assert right_title == a2.title
-      assert right_bl    == a2.base_label
-      assert right_uuid  == a2.uuid
-      assert left_prov   == a1.metadata.provenance
-      assert right_prov  == a2.metadata.provenance
+      assert right_bl == a2.base_label
+      assert right_uuid == a2.uuid
+      assert left_prov == a1.metadata.provenance
+      assert right_prov == a2.metadata.provenance
     end
 
     test "harmonise records :harmonised provenance with left and right title, base_label, uuid and provenance" do
-      a1 = Artefact.new(base_label: "LeftArtefact", graph: %Artefact.Graph{nodes: [shared_node()], relationships: []})
-      a2 = Artefact.new(base_label: "RightArtefact", graph: %Artefact.Graph{nodes: [shared_node()], relationships: []})
+      a1 =
+        Artefact.new(
+          base_label: "LeftArtefact",
+          graph: %Artefact.Graph{nodes: [shared_node()], relationships: []}
+        )
+
+      a2 =
+        Artefact.new(
+          base_label: "RightArtefact",
+          graph: %Artefact.Graph{nodes: [shared_node()], relationships: []}
+        )
+
       {:ok, bindings} = Artefact.Binding.find(a1, a2)
       result = Artefact.harmonise(a1, a2, bindings)
-      assert %{provenance: %{source: :harmonised, module: ArtefactTest,
-                             left:  %{title: left_title,  base_label: left_bl,  uuid: left_uuid,  provenance: left_prov},
-                             right: %{title: right_title, base_label: right_bl, uuid: right_uuid, provenance: right_prov}}} = result.metadata
-      assert left_title  == a1.title
-      assert left_bl     == a1.base_label
-      assert left_uuid   == a1.uuid
+
+      assert %{
+               provenance: %{
+                 source: :harmonised,
+                 module: ArtefactTest,
+                 left: %{
+                   title: left_title,
+                   base_label: left_bl,
+                   uuid: left_uuid,
+                   provenance: left_prov
+                 },
+                 right: %{
+                   title: right_title,
+                   base_label: right_bl,
+                   uuid: right_uuid,
+                   provenance: right_prov
+                 }
+               }
+             } = result.metadata
+
+      assert left_title == a1.title
+      assert left_bl == a1.base_label
+      assert left_uuid == a1.uuid
       assert right_title == a2.title
-      assert right_bl    == a2.base_label
-      assert right_uuid  == a2.uuid
-      assert left_prov   == a1.metadata.provenance
-      assert right_prov  == a2.metadata.provenance
+      assert right_bl == a2.base_label
+      assert right_uuid == a2.uuid
+      assert left_prov == a1.metadata.provenance
+      assert right_prov == a2.metadata.provenance
     end
   end
 
   describe "Artefact.new/1 — inline nodes and relationships" do
     test "builds nodes with sequential ids" do
-      a = Artefact.new(
-        nodes: [
-          matt:   [labels: ["Agent", "Me"],  properties: %{"name" => "Matt"}],
-          claude: [labels: ["Agent", "You"], properties: %{"name" => "Claude"}]
-        ],
-        relationships: []
-      )
+      a =
+        Artefact.new(
+          nodes: [
+            matt: [labels: ["Agent", "Me"], properties: %{"name" => "Matt"}],
+            claude: [labels: ["Agent", "You"], properties: %{"name" => "Claude"}]
+          ],
+          relationships: []
+        )
+
       by_id = Map.new(a.graph.nodes, &{&1.id, &1})
       assert map_size(by_id) == 2
       assert Map.has_key?(by_id, "n0")
@@ -84,13 +138,15 @@ defmodule ArtefactTest do
     end
 
     test "nodes have correct labels and properties" do
-      a = Artefact.new(
-        nodes: [
-          matt:   [labels: ["Agent", "Me"],  properties: %{"name" => "Matt"}],
-          claude: [labels: ["Agent", "You"], properties: %{"name" => "Claude"}]
-        ],
-        relationships: []
-      )
+      a =
+        Artefact.new(
+          nodes: [
+            matt: [labels: ["Agent", "Me"], properties: %{"name" => "Matt"}],
+            claude: [labels: ["Agent", "You"], properties: %{"name" => "Claude"}]
+          ],
+          relationships: []
+        )
+
       by_id = Map.new(a.graph.nodes, &{&1.id, &1})
       assert by_id["n0"].labels == ["Agent", "Me"]
       assert by_id["n0"].properties == %{"name" => "Matt"}
@@ -113,35 +169,41 @@ defmodule ArtefactTest do
     end
 
     test "builds relationship resolving atom keys to ids" do
-      a = Artefact.new(
-        nodes: [
-          matt:   [labels: ["Agent"]],
-          claude: [labels: ["Agent"]]
-        ],
-        relationships: [
-          [from: :matt, type: "US_TWO", to: :claude]
-        ]
-      )
+      a =
+        Artefact.new(
+          nodes: [
+            matt: [labels: ["Agent"]],
+            claude: [labels: ["Agent"]]
+          ],
+          relationships: [
+            [from: :matt, type: "US_TWO", to: :claude]
+          ]
+        )
+
       [rel] = a.graph.relationships
       assert rel.from_id == "n0"
-      assert rel.to_id   == "n1"
-      assert rel.type    == "US_TWO"
+      assert rel.to_id == "n1"
+      assert rel.type == "US_TWO"
     end
 
     test "relationship properties default to empty map" do
-      a = Artefact.new(
-        nodes: [a: [labels: []], b: [labels: []]],
-        relationships: [[from: :a, type: "KNOWS", to: :b]]
-      )
+      a =
+        Artefact.new(
+          nodes: [a: [labels: []], b: [labels: []]],
+          relationships: [[from: :a, type: "KNOWS", to: :b]]
+        )
+
       [rel] = a.graph.relationships
       assert rel.properties == %{}
     end
 
     test "relationship properties are set when provided" do
-      a = Artefact.new(
-        nodes: [a: [labels: []], b: [labels: []]],
-        relationships: [[from: :a, type: "KNOWS", to: :b, properties: %{"since" => "2024"}]]
-      )
+      a =
+        Artefact.new(
+          nodes: [a: [labels: []], b: [labels: []]],
+          relationships: [[from: :a, type: "KNOWS", to: :b, properties: %{"since" => "2024"}]]
+        )
+
       [rel] = a.graph.relationships
       assert rel.properties == %{"since" => "2024"}
     end
@@ -160,13 +222,15 @@ defmodule ArtefactTest do
 
   describe "Artefact.new/1 — inline nodes and relationships — multiple relationships" do
     setup do
-      a = Artefact.new(
-        nodes: [x: [labels: ["X"]], y: [labels: ["Y"]], z: [labels: ["Z"]]],
-        relationships: [
-          [from: :x, type: "NEXT", to: :y],
-          [from: :y, type: "NEXT", to: :z]
-        ]
-      )
+      a =
+        Artefact.new(
+          nodes: [x: [labels: ["X"]], y: [labels: ["Y"]], z: [labels: ["Z"]]],
+          relationships: [
+            [from: :x, type: "NEXT", to: :y],
+            [from: :y, type: "NEXT", to: :z]
+          ]
+        )
+
       %{artefact: a}
     end
 
@@ -194,30 +258,37 @@ defmodule ArtefactTest do
       json = File.read!(Path.join([@fixtures, "us_two", "arrows.json"]))
       from_json = Artefact.Arrows.from_json!(json)
 
-      from_struct = Artefact.new(
-        title: "UsTwo",
-        base_label: "UsTwo",
-        nodes: [
-          matt:   [labels: ["Agent", "Me"],  properties: %{"name" => "Matt"},
-                   uuid: "019da897-f2de-77ca-b5a4-40f0c3730943"],
-          claude: [labels: ["Agent", "You"], properties: %{"name" => "Claude"},
-                   uuid: "019da897-f2de-768c-94e2-3005f2431f37"]
-        ],
-        relationships: [
-          [from: :matt, type: "US_TWO", to: :claude]
-        ]
-      )
+      from_struct =
+        Artefact.new(
+          title: "UsTwo",
+          base_label: "UsTwo",
+          nodes: [
+            matt: [
+              labels: ["Agent", "Me"],
+              properties: %{"name" => "Matt"},
+              uuid: "019da897-f2de-77ca-b5a4-40f0c3730943"
+            ],
+            claude: [
+              labels: ["Agent", "You"],
+              properties: %{"name" => "Claude"},
+              uuid: "019da897-f2de-768c-94e2-3005f2431f37"
+            ]
+          ],
+          relationships: [
+            [from: :matt, type: "US_TWO", to: :claude]
+          ]
+        )
 
       %{from_json: from_json, from_struct: from_struct}
     end
 
     test "same title and base_label", %{from_json: j, from_struct: s} do
-      assert s.title      == j.title
+      assert s.title == j.title
       assert s.base_label == j.base_label
     end
 
     test "same number of nodes and relationships", %{from_json: j, from_struct: s} do
-      assert length(s.graph.nodes)         == length(j.graph.nodes)
+      assert length(s.graph.nodes) == length(j.graph.nodes)
       assert length(s.graph.relationships) == length(j.graph.relationships)
     end
 
@@ -242,7 +313,7 @@ defmodule ArtefactTest do
       assert sr.type == jr.type
       from_uuid = fn a, rel_id -> Enum.find(a.graph.nodes, &(&1.id == rel_id)).uuid end
       assert from_uuid.(s, sr.from_id) == from_uuid.(j, jr.from_id)
-      assert from_uuid.(s, sr.to_id)   == from_uuid.(j, jr.to_id)
+      assert from_uuid.(s, sr.to_id) == from_uuid.(j, jr.to_id)
     end
 
     test "inline build has :struct provenance", %{from_struct: s} do
@@ -328,7 +399,9 @@ defmodule ArtefactTest do
     test "to_json/from_json! preserves nodes and relationships" do
       json = File.read!(Path.join([@fixtures, "us_two", "arrows.json"]))
       original = Artefact.Arrows.from_json!(json, id: "rt-test")
-      round_tripped = original |> Artefact.Arrows.to_json() |> Artefact.Arrows.from_json!(id: "rt-test")
+
+      round_tripped =
+        original |> Artefact.Arrows.to_json() |> Artefact.Arrows.from_json!(id: "rt-test")
 
       assert length(round_tripped.graph.nodes) == length(original.graph.nodes)
       assert length(round_tripped.graph.relationships) == length(original.graph.relationships)
@@ -351,7 +424,9 @@ defmodule ArtefactTest do
       a1 = artefact_with([shared_node(), other_node("019d0000-0000-7000-8000-000000000001")])
       a2 = artefact_with([shared_node(), other_node("019d0000-0000-7000-8000-000000000002")])
 
-      assert {:ok, [%Artefact.Binding{uuid_a: uuid, uuid_b: uuid}]} = Artefact.Binding.find(a1, a2)
+      assert {:ok, [%Artefact.Binding{uuid_a: uuid, uuid_b: uuid}]} =
+               Artefact.Binding.find(a1, a2)
+
       assert uuid == shared_node().uuid
     end
 
@@ -392,8 +467,12 @@ defmodule ArtefactTest do
 
     defp artefact_nodes(nodes) do
       %Artefact{
-        id: Artefact.UUID.generate_v7(), uuid: Artefact.UUID.generate_v7(),
-        title: nil, base_label: nil, style: nil, metadata: %{},
+        id: Artefact.UUID.generate_v7(),
+        uuid: Artefact.UUID.generate_v7(),
+        title: nil,
+        base_label: nil,
+        style: nil,
+        metadata: %{},
         graph: %Artefact.Graph{nodes: nodes, relationships: []}
       }
     end
@@ -443,8 +522,20 @@ defmodule ArtefactTest do
     end
 
     test "shared label appears once in union" do
-      n_a = %Artefact.Node{id: "n0", uuid: @uuid_shared, labels: ["Shared", "OnlyA"], properties: %{}}
-      n_b = %Artefact.Node{id: "n0", uuid: @uuid_shared, labels: ["Shared", "OnlyB"], properties: %{}}
+      n_a = %Artefact.Node{
+        id: "n0",
+        uuid: @uuid_shared,
+        labels: ["Shared", "OnlyA"],
+        properties: %{}
+      }
+
+      n_b = %Artefact.Node{
+        id: "n0",
+        uuid: @uuid_shared,
+        labels: ["Shared", "OnlyB"],
+        properties: %{}
+      }
+
       a1 = artefact_nodes([n_a])
       a2 = artefact_nodes([n_b])
       {:ok, bindings} = Artefact.Binding.find(a1, a2)
@@ -458,6 +549,7 @@ defmodule ArtefactTest do
     test "raises when harmonising an artefact with itself" do
       a = artefact_with([shared_node()])
       {:ok, bindings} = Artefact.Binding.find(a, a)
+
       assert_raise ArgumentError, ~r/cannot harmonise an artefact with itself/, fn ->
         Artefact.harmonise(a, a, bindings)
       end
@@ -466,6 +558,7 @@ defmodule ArtefactTest do
     test "raises when both artefacts have the same base_label" do
       a1 = Artefact.new(base_label: "Same")
       a2 = Artefact.new(base_label: "Same")
+
       assert_raise ArgumentError, ~r/cannot harmonise artefacts with the same base_label/, fn ->
         Artefact.harmonise(a1, a2, [])
       end
@@ -481,48 +574,125 @@ defmodule ArtefactTest do
         %Artefact.Node{id: id_x, uuid: uuid_x, labels: [], properties: %{}},
         %Artefact.Node{id: id_y, uuid: uuid_y, labels: [], properties: %{}}
       ]
+
       %Artefact{
-        id: Artefact.UUID.generate_v7(), uuid: Artefact.UUID.generate_v7(),
-        title: nil, base_label: nil, style: nil, metadata: %{},
+        id: Artefact.UUID.generate_v7(),
+        uuid: Artefact.UUID.generate_v7(),
+        title: nil,
+        base_label: nil,
+        style: nil,
+        metadata: %{},
         graph: %Artefact.Graph{nodes: nodes, relationships: rels}
       }
     end
 
     test "identical relationship appears once after harmonise" do
-      a1 = two_node_artefact(@uuid_a, @uuid_b, "n0", "n1",
-        [%Artefact.Relationship{id: "r0", from_id: "n0", to_id: "n1", type: "KNOWS", properties: %{}}])
-      a2 = two_node_artefact(@uuid_a, @uuid_b, "n0", "n1",
-        [%Artefact.Relationship{id: "r0", from_id: "n0", to_id: "n1", type: "KNOWS", properties: %{}}])
+      a1 =
+        two_node_artefact(@uuid_a, @uuid_b, "n0", "n1", [
+          %Artefact.Relationship{
+            id: "r0",
+            from_id: "n0",
+            to_id: "n1",
+            type: "KNOWS",
+            properties: %{}
+          }
+        ])
+
+      a2 =
+        two_node_artefact(@uuid_a, @uuid_b, "n0", "n1", [
+          %Artefact.Relationship{
+            id: "r0",
+            from_id: "n0",
+            to_id: "n1",
+            type: "KNOWS",
+            properties: %{}
+          }
+        ])
+
       {:ok, bindings} = Artefact.Binding.find(a1, a2)
       result = Artefact.harmonise(a1, a2, bindings)
       assert length(result.graph.relationships) == 1
     end
 
     test "different type relationships both survive" do
-      a1 = two_node_artefact(@uuid_a, @uuid_b, "n0", "n1",
-        [%Artefact.Relationship{id: "r0", from_id: "n0", to_id: "n1", type: "KNOWS", properties: %{}}])
-      a2 = two_node_artefact(@uuid_a, @uuid_b, "n0", "n1",
-        [%Artefact.Relationship{id: "r1", from_id: "n0", to_id: "n1", type: "TRUSTS", properties: %{}}])
+      a1 =
+        two_node_artefact(@uuid_a, @uuid_b, "n0", "n1", [
+          %Artefact.Relationship{
+            id: "r0",
+            from_id: "n0",
+            to_id: "n1",
+            type: "KNOWS",
+            properties: %{}
+          }
+        ])
+
+      a2 =
+        two_node_artefact(@uuid_a, @uuid_b, "n0", "n1", [
+          %Artefact.Relationship{
+            id: "r1",
+            from_id: "n0",
+            to_id: "n1",
+            type: "TRUSTS",
+            properties: %{}
+          }
+        ])
+
       {:ok, bindings} = Artefact.Binding.find(a1, a2)
       result = Artefact.harmonise(a1, a2, bindings)
       assert length(result.graph.relationships) == 2
     end
 
     test "opposite direction relationships both survive" do
-      a1 = two_node_artefact(@uuid_a, @uuid_b, "n0", "n1",
-        [%Artefact.Relationship{id: "r0", from_id: "n0", to_id: "n1", type: "KNOWS", properties: %{}}])
-      a2 = two_node_artefact(@uuid_a, @uuid_b, "n0", "n1",
-        [%Artefact.Relationship{id: "r1", from_id: "n1", to_id: "n0", type: "KNOWS", properties: %{}}])
+      a1 =
+        two_node_artefact(@uuid_a, @uuid_b, "n0", "n1", [
+          %Artefact.Relationship{
+            id: "r0",
+            from_id: "n0",
+            to_id: "n1",
+            type: "KNOWS",
+            properties: %{}
+          }
+        ])
+
+      a2 =
+        two_node_artefact(@uuid_a, @uuid_b, "n0", "n1", [
+          %Artefact.Relationship{
+            id: "r1",
+            from_id: "n1",
+            to_id: "n0",
+            type: "KNOWS",
+            properties: %{}
+          }
+        ])
+
       {:ok, bindings} = Artefact.Binding.find(a1, a2)
       result = Artefact.harmonise(a1, a2, bindings)
       assert length(result.graph.relationships) == 2
     end
 
     test "duplicate relationship properties merged left-wins" do
-      a1 = two_node_artefact(@uuid_a, @uuid_b, "n0", "n1",
-        [%Artefact.Relationship{id: "r0", from_id: "n0", to_id: "n1", type: "KNOWS", properties: %{"since" => "2020", "trust" => "high"}}])
-      a2 = two_node_artefact(@uuid_a, @uuid_b, "n0", "n1",
-        [%Artefact.Relationship{id: "r1", from_id: "n0", to_id: "n1", type: "KNOWS", properties: %{"since" => "2019", "source" => "intro"}}])
+      a1 =
+        two_node_artefact(@uuid_a, @uuid_b, "n0", "n1", [
+          %Artefact.Relationship{
+            id: "r0",
+            from_id: "n0",
+            to_id: "n1",
+            type: "KNOWS",
+            properties: %{"since" => "2020", "trust" => "high"}
+          }
+        ])
+
+      a2 =
+        two_node_artefact(@uuid_a, @uuid_b, "n0", "n1", [
+          %Artefact.Relationship{
+            id: "r1",
+            from_id: "n0",
+            to_id: "n1",
+            type: "KNOWS",
+            properties: %{"since" => "2019", "source" => "intro"}
+          }
+        ])
+
       {:ok, bindings} = Artefact.Binding.find(a1, a2)
       result = Artefact.harmonise(a1, a2, bindings)
       [rel] = result.graph.relationships
@@ -553,7 +723,9 @@ defmodule ArtefactTest do
   describe "Artefact.Cypher.create/1 — us_two" do
     test "matches fixture" do
       json = File.read!(Path.join([@fixtures, "us_two", "arrows.json"]))
-      expected = File.read!(Path.join([@fixtures, "us_two", "create_cypher.txt"])) |> String.trim()
+
+      expected =
+        File.read!(Path.join([@fixtures, "us_two", "create_cypher.txt"])) |> String.trim()
 
       artefact = Artefact.Arrows.from_json!(json)
       assert Artefact.Cypher.create(artefact) == expected
@@ -613,7 +785,11 @@ defmodule ArtefactTest do
       end)
     end
 
-    test "node properties are in params not inline", %{artefact: a, cypher: cypher, params: params} do
+    test "node properties are in params not inline", %{
+      artefact: a,
+      cypher: cypher,
+      params: params
+    } do
       Enum.each(a.graph.nodes, fn node ->
         assert String.contains?(cypher, "$#{node.id}_props")
         assert params["#{node.id}_props"] == node.properties
@@ -639,7 +815,11 @@ defmodule ArtefactTest do
       refute String.contains?(cypher, "MERGE")
     end
 
-    test "node properties are in params not inline", %{artefact: a, cypher: cypher, params: params} do
+    test "node properties are in params not inline", %{
+      artefact: a,
+      cypher: cypher,
+      params: params
+    } do
       Enum.each(a.graph.nodes, fn node ->
         Enum.each(node.properties, fn {k, v} ->
           assert String.contains?(cypher, "$#{node.id}_#{k}")
@@ -673,7 +853,9 @@ defmodule ArtefactTest do
     end
 
     test "Cypher export matches fixture", %{artefact: a} do
-      expected = File.read!(Path.join([@fixtures, "artefact", "create_cypher.txt"])) |> String.trim()
+      expected =
+        File.read!(Path.join([@fixtures, "artefact", "create_cypher.txt"])) |> String.trim()
+
       assert Artefact.Cypher.create(a) == expected
     end
   end
@@ -688,8 +870,8 @@ defmodule ArtefactTest do
       assert length(a.graph.nodes) == 8
     end
 
-    test "base_label is ArtefactHarmonise", %{artefact: a} do
-      assert a.base_label == "ArtefactHarmonise"
+    test "base_label is Artefact Harmonise", %{artefact: a} do
+      assert a.base_label == "Artefact Harmonise"
     end
 
     test "has compose, harmonise, Binding, guards and outcomes", %{artefact: a} do
@@ -707,12 +889,18 @@ defmodule ArtefactTest do
     end
 
     test "create Cypher matches fixture", %{artefact: a} do
-      expected = File.read!(Path.join([@fixtures, "artefact_harmonise", "create_cypher.txt"])) |> String.trim()
+      expected =
+        File.read!(Path.join([@fixtures, "artefact_harmonise", "create_cypher.txt"]))
+        |> String.trim()
+
       assert Artefact.Cypher.create(a) == expected
     end
 
     test "merge Cypher matches fixture", %{artefact: a} do
-      expected = File.read!(Path.join([@fixtures, "artefact_harmonise", "merge_cypher.txt"])) |> String.trim()
+      expected =
+        File.read!(Path.join([@fixtures, "artefact_harmonise", "merge_cypher.txt"]))
+        |> String.trim()
+
       assert Artefact.Cypher.merge(a) == expected
     end
   end
@@ -743,12 +931,18 @@ defmodule ArtefactTest do
     end
 
     test "create Cypher matches fixture", %{artefact: a} do
-      expected = File.read!(Path.join([@fixtures, "artefact_combine", "create_cypher.txt"])) |> String.trim()
+      expected =
+        File.read!(Path.join([@fixtures, "artefact_combine", "create_cypher.txt"]))
+        |> String.trim()
+
       assert Artefact.Cypher.create(a) == expected
     end
 
     test "merge Cypher matches fixture", %{artefact: a} do
-      expected = File.read!(Path.join([@fixtures, "artefact_combine", "merge_cypher.txt"])) |> String.trim()
+      expected =
+        File.read!(Path.join([@fixtures, "artefact_combine", "merge_cypher.txt"]))
+        |> String.trim()
+
       assert Artefact.Cypher.merge(a) == expected
     end
   end
@@ -1088,6 +1282,610 @@ defmodule ArtefactTest do
       other = combine_artefact("Valuing", "019d0000-0000-7000-8000-000000000020")
 
       assert_raise MatchError, fn -> Artefact.combine(heart, other) end
+    end
+  end
+
+  describe "Artefact.graft/3 — happy path with OurShells fixture" do
+    alias Artefact.Test.Fixtures.OurShells
+
+    setup do
+      left = OurShells.our_shells()
+
+      result =
+        Artefact.graft(left, OurShells.manifesto_args(),
+          title: "Our Shells and Manifesto",
+          description: "Our Shells and Manifesto shape our Association Knowing."
+        )
+
+      %{left: left, result: result}
+    end
+
+    test "result has opts title and description", %{result: r} do
+      assert r.title == "Our Shells and Manifesto"
+      assert r.description == "Our Shells and Manifesto shape our Association Knowing."
+    end
+
+    test "result keeps left base_label", %{left: left, result: r} do
+      assert r.base_label == left.base_label
+    end
+
+    test "result is a fresh artefact (new uuid)", %{left: left, result: r} do
+      assert r.uuid != left.uuid
+    end
+
+    test "new args nodes are appended to left graph", %{left: left, result: r} do
+      assert length(r.graph.nodes) == length(left.graph.nodes) + 3
+
+      uuids = Enum.map(r.graph.nodes, & &1.uuid)
+      assert OurShells.ethics_uuid() in uuids
+      assert OurShells.stewardship_uuid() in uuids
+      assert OurShells.intent_uuid() in uuids
+    end
+
+    test "new node ids continue left's offset", %{left: left, result: r} do
+      offset = length(left.graph.nodes)
+
+      new_uuids =
+        MapSet.new([
+          OurShells.ethics_uuid(),
+          OurShells.stewardship_uuid(),
+          OurShells.intent_uuid()
+        ])
+
+      new_nodes = Enum.filter(r.graph.nodes, &MapSet.member?(new_uuids, &1.uuid))
+      ids = new_nodes |> Enum.map(& &1.id) |> Enum.sort()
+      expected = for i <- offset..(offset + 2), do: "n#{i}"
+      assert ids == Enum.sort(expected)
+    end
+
+    test "bind-only nodes preserve their existing id", %{left: left, result: r} do
+      left_by_uuid = Map.new(left.graph.nodes, &{&1.uuid, &1})
+      result_by_uuid = Map.new(r.graph.nodes, &{&1.uuid, &1})
+
+      for uuid <- [
+            OurShells.me_uuid(),
+            OurShells.council_uuid(),
+            OurShells.core_uuid(),
+            OurShells.association_uuid()
+          ] do
+        assert result_by_uuid[uuid].id == left_by_uuid[uuid].id
+      end
+    end
+
+    test "new relationships from args are added", %{left: left, result: r} do
+      assert length(r.graph.relationships) == length(left.graph.relationships) + 4
+    end
+
+    test "the four new KNOWING relationships are present", %{result: r} do
+      result_by_uuid = Map.new(r.graph.nodes, &{&1.uuid, &1})
+
+      pair = fn from_uuid, to_uuid ->
+        from_id = result_by_uuid[from_uuid].id
+        to_id = result_by_uuid[to_uuid].id
+
+        Enum.any?(r.graph.relationships, fn rel ->
+          rel.from_id == from_id and rel.to_id == to_id and rel.type == "KNOWING"
+        end)
+      end
+
+      assert pair.(OurShells.me_uuid(), OurShells.stewardship_uuid())
+      assert pair.(OurShells.council_uuid(), OurShells.ethics_uuid())
+      assert pair.(OurShells.core_uuid(), OurShells.intent_uuid())
+      assert pair.(OurShells.association_uuid(), OurShells.stewardship_uuid())
+    end
+
+    test "new relationships connect the right node ids", %{result: r} do
+      result_by_uuid = Map.new(r.graph.nodes, &{&1.uuid, &1})
+      me_id = result_by_uuid[OurShells.me_uuid()].id
+      stewardship_id = result_by_uuid[OurShells.stewardship_uuid()].id
+
+      assert Enum.any?(r.graph.relationships, fn rel ->
+               rel.from_id == me_id and rel.to_id == stewardship_id and rel.type == "KNOWING"
+             end)
+    end
+
+    test "records :grafted provenance with right title and description", %{left: left, result: r} do
+      assert %{
+               provenance: %{
+                 source: :grafted,
+                 module: ArtefactTest,
+                 left: %{
+                   title: left_title,
+                   base_label: left_bl,
+                   uuid: left_uuid,
+                   provenance: left_prov
+                 },
+                 right: %{title: right_title, description: right_desc}
+               }
+             } = r.metadata
+
+      assert left_title == left.title
+      assert left_bl == left.base_label
+      assert left_uuid == left.uuid
+      assert left_prov == left.metadata.provenance
+
+      assert right_title == "Our Shells and Manifesto"
+      assert right_desc == "Our Shells and Manifesto shape our Association Knowing."
+    end
+  end
+
+  describe "Artefact.graft/3 — opts behaviour" do
+    alias Artefact.Test.Fixtures.OurShells
+
+    test "title and description fall back to left when opts omits them" do
+      left = OurShells.our_shells()
+      result = Artefact.graft(left, OurShells.manifesto_args())
+
+      assert result.title == left.title
+      assert result.description == left.description
+    end
+
+    test "right provenance carries nil when opts omits title and description" do
+      left = OurShells.our_shells()
+      result = Artefact.graft(left, OurShells.manifesto_args())
+
+      assert %{provenance: %{right: %{title: nil, description: nil}}} = result.metadata
+    end
+
+    test "base_label in opts is ignored — left's base_label always wins" do
+      left = OurShells.our_shells()
+      result = Artefact.graft(left, OurShells.manifesto_args(), base_label: "ShouldBeIgnored")
+
+      assert result.base_label == left.base_label
+    end
+  end
+
+  describe "Artefact.graft/3 — bind-only merge semantics" do
+    @left_uuid "019d0000-0000-7000-8000-0000000000aa"
+
+    defp single_node_artefact(labels, properties) do
+      Artefact.new(
+        title: "Left",
+        nodes: [n: [labels: labels, properties: properties, uuid: @left_uuid]],
+        relationships: []
+      )
+    end
+
+    test "bind-only with new labels — labels are unioned" do
+      left = single_node_artefact(["LeftLabel"], %{})
+
+      result =
+        Artefact.graft(left,
+          nodes: [n: [labels: ["RightLabel"], uuid: @left_uuid]],
+          relationships: []
+        )
+
+      [node] = result.graph.nodes
+      assert Enum.sort(node.labels) == ["LeftLabel", "RightLabel"]
+    end
+
+    test "bind-only with shared label — appears once" do
+      left = single_node_artefact(["Shared", "OnlyLeft"], %{})
+
+      result =
+        Artefact.graft(left,
+          nodes: [n: [labels: ["Shared", "OnlyRight"], uuid: @left_uuid]],
+          relationships: []
+        )
+
+      [node] = result.graph.nodes
+      assert Enum.sort(node.labels) == ["OnlyLeft", "OnlyRight", "Shared"]
+    end
+
+    test "bind-only with new property keys — both survive" do
+      left = single_node_artefact([], %{"left_key" => "L"})
+
+      result =
+        Artefact.graft(left,
+          nodes: [n: [properties: %{"right_key" => "R"}, uuid: @left_uuid]],
+          relationships: []
+        )
+
+      [node] = result.graph.nodes
+      assert node.properties == %{"left_key" => "L", "right_key" => "R"}
+    end
+
+    test "bind-only with conflicting property — left wins" do
+      left = single_node_artefact([], %{"shared_key" => "from_left"})
+
+      result =
+        Artefact.graft(left,
+          nodes: [n: [properties: %{"shared_key" => "from_right"}, uuid: @left_uuid]],
+          relationships: []
+        )
+
+      [node] = result.graph.nodes
+      assert node.properties["shared_key"] == "from_left"
+    end
+
+    test "bind-only does not append a new node" do
+      left = single_node_artefact(["X"], %{})
+
+      result =
+        Artefact.graft(left,
+          nodes: [n: [uuid: @left_uuid]],
+          relationships: []
+        )
+
+      assert length(result.graph.nodes) == length(left.graph.nodes)
+    end
+  end
+
+  describe "Artefact.graft/3 — relationship dedupe" do
+    @uuid_a "019d0000-0000-7000-8000-0000000000b1"
+    @uuid_b "019d0000-0000-7000-8000-0000000000b2"
+
+    test "args relationship matching an existing left relationship is deduped (left properties win)" do
+      left =
+        Artefact.new(
+          title: "Pair",
+          nodes: [
+            a: [labels: [], properties: %{}, uuid: @uuid_a],
+            b: [labels: [], properties: %{}, uuid: @uuid_b]
+          ],
+          relationships: [[from: :a, type: "KNOWS", to: :b, properties: %{"since" => "2020"}]]
+        )
+
+      result =
+        Artefact.graft(left,
+          nodes: [
+            a: [uuid: @uuid_a],
+            b: [uuid: @uuid_b]
+          ],
+          relationships: [
+            [
+              from: :a,
+              type: "KNOWS",
+              to: :b,
+              properties: %{"since" => "2099", "source" => "graft"}
+            ]
+          ]
+        )
+
+      assert length(result.graph.relationships) == 1
+      [rel] = result.graph.relationships
+      assert rel.properties["since"] == "2020"
+      assert rel.properties["source"] == "graft"
+    end
+  end
+
+  describe "Artefact.graft/3 — guards" do
+    alias Artefact.Test.Fixtures.OurShells
+
+    test "raises when an args node is missing :uuid" do
+      left = OurShells.our_shells()
+
+      assert_raise ArgumentError, ~r/graft: node :without_uuid is missing required :uuid/, fn ->
+        Artefact.graft(left,
+          nodes: [without_uuid: [labels: ["Knowing"]]],
+          relationships: []
+        )
+      end
+    end
+
+    test "raises when args has duplicate node keys" do
+      left = OurShells.our_shells()
+
+      assert_raise ArgumentError, ~r/graft: duplicate node keys/, fn ->
+        Artefact.graft(left,
+          nodes: [
+            {:dup, [uuid: "019d0000-0000-7000-8000-000000000c01"]},
+            {:dup, [uuid: "019d0000-0000-7000-8000-000000000c02"]}
+          ],
+          relationships: []
+        )
+      end
+    end
+
+    test "raises when a relationship references a key not in args.nodes" do
+      left = OurShells.our_shells()
+
+      assert_raise ArgumentError,
+                   ~r/graft: relationship references unknown node key :ghost/,
+                   fn ->
+                     Artefact.graft(left,
+                       nodes: [{:me, [uuid: OurShells.me_uuid()]}],
+                       relationships: [[from: :me, type: "KNOWING", to: :ghost]]
+                     )
+                   end
+    end
+  end
+
+  describe "Artefact.UUID.valid?/1" do
+    test "true for a freshly generated UUIDv7" do
+      assert Artefact.UUID.valid?(Artefact.UUID.generate_v7())
+    end
+
+    test "true for canonical UUIDv7 strings" do
+      assert Artefact.UUID.valid?("019ddb71-c70b-7b3e-83b1-58f4d0be2852")
+      assert Artefact.UUID.valid?("019d0000-0000-7000-8000-000000000000")
+    end
+
+    test "false for empty string" do
+      refute Artefact.UUID.valid?("")
+    end
+
+    test "false for non-binary input" do
+      refute Artefact.UUID.valid?(nil)
+      refute Artefact.UUID.valid?(:atom)
+      refute Artefact.UUID.valid?(123)
+    end
+
+    test "false for wrong format" do
+      refute Artefact.UUID.valid?("019ddb71c70b7b3e83b158f4d0be2852")
+      refute Artefact.UUID.valid?("019ddb71-c70b-7b3e-83b1")
+      refute Artefact.UUID.valid?("019DDB71-C70B-7B3E-83B1-58F4D0BE2852")
+    end
+
+    test "false for wrong version digit (must be 7)" do
+      refute Artefact.UUID.valid?("019ddb71-c70b-4b3e-83b1-58f4d0be2852")
+    end
+
+    test "false for wrong variant digit (must be 8/9/a/b)" do
+      refute Artefact.UUID.valid?("019ddb71-c70b-7b3e-c3b1-58f4d0be2852")
+    end
+  end
+
+  describe "Artefact.is_artefact?/1" do
+    test "true for an %Artefact{} struct" do
+      assert Artefact.is_artefact?(Artefact.new())
+    end
+
+    test "false for non-artefact values" do
+      refute Artefact.is_artefact?(nil)
+      refute Artefact.is_artefact?(%{})
+      refute Artefact.is_artefact?(%Artefact.Node{})
+      refute Artefact.is_artefact?("artefact")
+    end
+  end
+
+  describe "Artefact.validate/1 + is_valid?/1" do
+    @good_uuid_a "019d0000-0000-7000-8000-0000000000a1"
+    @good_uuid_b "019d0000-0000-7000-8000-0000000000a2"
+
+    defp valid_artefact_with(nodes, rels) do
+      %Artefact{
+        id: Artefact.UUID.generate_v7(),
+        uuid: Artefact.UUID.generate_v7(),
+        title: nil,
+        base_label: nil,
+        style: nil,
+        metadata: %{},
+        graph: %Artefact.Graph{nodes: nodes, relationships: rels}
+      }
+    end
+
+    test "fresh Artefact.new is valid" do
+      assert Artefact.is_valid?(Artefact.new())
+      assert Artefact.validate(Artefact.new()) == :ok
+    end
+
+    test "non-artefact returns error" do
+      assert {:error, ["not an %Artefact{} struct"]} = Artefact.validate(%{})
+    end
+
+    test "rejects empty uuid on the artefact itself" do
+      a = %{Artefact.new() | uuid: ""}
+      assert {:error, reasons} = Artefact.validate(a)
+      assert Enum.any?(reasons, &(&1 =~ "uuid is not a valid UUIDv7"))
+    end
+
+    test "rejects non-list labels on a node" do
+      n = %Artefact.Node{id: "n0", uuid: @good_uuid_a, labels: "Engine", properties: %{}}
+      a = valid_artefact_with([n], [])
+      assert {:error, reasons} = Artefact.validate(a)
+      assert Enum.any?(reasons, &(&1 =~ "labels is not a list of strings"))
+    end
+
+    test "rejects list-of-non-strings labels on a node" do
+      n = %Artefact.Node{id: "n0", uuid: @good_uuid_a, labels: [:Engine], properties: %{}}
+      a = valid_artefact_with([n], [])
+      assert {:error, reasons} = Artefact.validate(a)
+      assert Enum.any?(reasons, &(&1 =~ "labels is not a list of strings"))
+    end
+
+    test "rejects non-map properties on a node" do
+      n = %Artefact.Node{id: "n0", uuid: @good_uuid_a, labels: [], properties: []}
+      a = valid_artefact_with([n], [])
+      assert {:error, reasons} = Artefact.validate(a)
+      assert Enum.any?(reasons, &(&1 =~ "properties is not a map"))
+    end
+
+    test "rejects relationship with from_id not in graph" do
+      n = %Artefact.Node{id: "n0", uuid: @good_uuid_a, labels: [], properties: %{}}
+
+      r = %Artefact.Relationship{
+        id: "r0",
+        type: "X",
+        from_id: "ghost",
+        to_id: "n0",
+        properties: %{}
+      }
+
+      a = valid_artefact_with([n], [r])
+      assert {:error, reasons} = Artefact.validate(a)
+      assert Enum.any?(reasons, &(&1 =~ ~s(from_id "ghost" not in graph)))
+    end
+
+    test "rejects relationship with empty type" do
+      n0 = %Artefact.Node{id: "n0", uuid: @good_uuid_a, labels: [], properties: %{}}
+      n1 = %Artefact.Node{id: "n1", uuid: @good_uuid_b, labels: [], properties: %{}}
+
+      r = %Artefact.Relationship{
+        id: "r0",
+        type: "",
+        from_id: "n0",
+        to_id: "n1",
+        properties: %{}
+      }
+
+      a = valid_artefact_with([n0, n1], [r])
+      assert {:error, reasons} = Artefact.validate(a)
+      assert Enum.any?(reasons, &(&1 =~ "type is not a non-empty string"))
+    end
+
+    test "rejects duplicate node uuids" do
+      n0 = %Artefact.Node{id: "n0", uuid: @good_uuid_a, labels: [], properties: %{}}
+      n1 = %Artefact.Node{id: "n1", uuid: @good_uuid_a, labels: [], properties: %{}}
+      a = valid_artefact_with([n0, n1], [])
+      assert {:error, reasons} = Artefact.validate(a)
+      assert Enum.any?(reasons, &(&1 =~ "duplicate node uuids"))
+    end
+
+    test "rejects duplicate node ids" do
+      n0 = %Artefact.Node{id: "n0", uuid: @good_uuid_a, labels: [], properties: %{}}
+      n1 = %Artefact.Node{id: "n0", uuid: @good_uuid_b, labels: [], properties: %{}}
+      a = valid_artefact_with([n0, n1], [])
+      assert {:error, reasons} = Artefact.validate(a)
+      assert Enum.any?(reasons, &(&1 =~ "duplicate node ids"))
+    end
+
+    test "is_valid? is the boolean shortcut" do
+      n = %Artefact.Node{id: "n0", uuid: "", labels: [], properties: %{}}
+      a = valid_artefact_with([n], [])
+      refute Artefact.is_valid?(a)
+      assert Artefact.is_valid?(Artefact.new())
+    end
+  end
+
+  describe "Artefact.validate!/1" do
+    test ":ok for a valid artefact" do
+      assert Artefact.validate!(Artefact.new()) == :ok
+    end
+
+    test "raises ArgumentError with reasons for invalid artefact" do
+      a = %{Artefact.new() | uuid: ""}
+
+      assert_raise ArgumentError,
+                   ~r/invalid artefact:.*uuid is not a valid UUIDv7/,
+                   fn -> Artefact.validate!(a) end
+    end
+  end
+
+  describe "Artefact.graft/3 — input rejection (validation)" do
+    alias Artefact.Test.Fixtures.OurShells
+
+    test "raises when a node :uuid is empty string" do
+      left = OurShells.our_shells()
+
+      assert_raise ArgumentError, ~r/:uuid "" is not a valid UUIDv7/, fn ->
+        Artefact.graft(left,
+          nodes: [bad: [labels: ["Knowing"], uuid: ""]],
+          relationships: []
+        )
+      end
+    end
+
+    test "raises when a node :uuid is malformed" do
+      left = OurShells.our_shells()
+
+      assert_raise ArgumentError, ~r/is not a valid UUIDv7/, fn ->
+        Artefact.graft(left,
+          nodes: [bad: [labels: ["X"], uuid: "not-a-uuid"]],
+          relationships: []
+        )
+      end
+    end
+
+    test "raises when a node :labels is not a list" do
+      left = OurShells.our_shells()
+
+      assert_raise ArgumentError, ~r/:labels "Engine" is not a list of strings/, fn ->
+        Artefact.graft(left,
+          nodes: [bad: [labels: "Engine", uuid: "019d0000-0000-7000-8000-0000000000d1"]],
+          relationships: []
+        )
+      end
+    end
+
+    test "raises when a node :properties is not a map" do
+      left = OurShells.our_shells()
+
+      assert_raise ArgumentError, ~r/:properties.* is not a map/, fn ->
+        Artefact.graft(left,
+          nodes: [bad: [properties: [], uuid: "019d0000-0000-7000-8000-0000000000d2"]],
+          relationships: []
+        )
+      end
+    end
+  end
+
+  describe "Artefact.graft/3 — no new islands (#29)" do
+    alias Artefact.Test.Fixtures.OurShells
+
+    test "raises when a single new node has no relationship to a bind-only node" do
+      left = OurShells.our_shells()
+
+      assert_raise ArgumentError, ~r/disconnected islands/, fn ->
+        Artefact.graft(left,
+          nodes: [
+            {:me, [uuid: OurShells.me_uuid()]},
+            {:floating, [labels: ["X"], uuid: "019d0000-0000-7000-8000-0000000000e1"]}
+          ],
+          relationships: []
+        )
+      end
+    end
+
+    test "raises when new nodes form a chain disconnected from any bind-only node" do
+      left = OurShells.our_shells()
+
+      assert_raise ArgumentError, ~r/disconnected islands/, fn ->
+        Artefact.graft(left,
+          nodes: [
+            {:me, [uuid: OurShells.me_uuid()]},
+            {:b, [labels: ["X"], uuid: "019d0000-0000-7000-8000-0000000000e2"]},
+            {:c, [labels: ["X"], uuid: "019d0000-0000-7000-8000-0000000000e3"]}
+          ],
+          relationships: [[from: :b, type: "X", to: :c]]
+        )
+      end
+    end
+
+    test "passes when a new node connects directly to a bind-only node" do
+      left = OurShells.our_shells()
+
+      result =
+        Artefact.graft(left,
+          nodes: [
+            {:me, [uuid: OurShells.me_uuid()]},
+            {:b, [labels: ["X"], uuid: "019d0000-0000-7000-8000-0000000000e4"]}
+          ],
+          relationships: [[from: :me, type: "REACHES", to: :b]]
+        )
+
+      assert Artefact.is_valid?(result)
+    end
+
+    test "passes when a chain of new nodes is anchored via the first to a bind-only" do
+      left = OurShells.our_shells()
+
+      result =
+        Artefact.graft(left,
+          nodes: [
+            {:me, [uuid: OurShells.me_uuid()]},
+            {:b, [labels: ["X"], uuid: "019d0000-0000-7000-8000-0000000000e5"]},
+            {:c, [labels: ["X"], uuid: "019d0000-0000-7000-8000-0000000000e6"]}
+          ],
+          relationships: [
+            [from: :me, type: "REACHES", to: :b],
+            [from: :b, type: "NEXT", to: :c]
+          ]
+        )
+
+      assert Artefact.is_valid?(result)
+    end
+
+    test "passes when args has only bind-only nodes (no new nodes)" do
+      left = OurShells.our_shells()
+
+      result =
+        Artefact.graft(left,
+          nodes: [{:me, [uuid: OurShells.me_uuid()]}],
+          relationships: []
+        )
+
+      assert Artefact.is_valid?(result)
     end
   end
 end

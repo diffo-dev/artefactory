@@ -18,7 +18,9 @@ ArtefactKino is a viewer, not an editor. It renders three panels side by side:
 
 - **Graph** (heartside) — an interactive vis-network graph. Nodes are colour-coded by label, with colours blended for multi-label nodes using circular hue averaging in linear RGB space. Layout strategies: Physics, Hierarchical, Radial.
 - **Inspector** — tabbed Elixir view of the artefact struct, nodes table, and relationships table. Clicking a node or relationship in the graph navigates to and highlights the corresponding row.
-- **Export** — CREATE Cypher, MERGE Cypher, and Arrows JSON. Click any panel to select all text for easy copying. The export panel is collapsible to give more space to the graph and inspector.
+- **Export** — CREATE Cypher, MERGE Cypher, Arrows JSON, and Mermaid source. Click any panel to select all text for easy copying.
+
+The Inspector and Export panels are both collapsible and start collapsed by default to give the graph room on bigger artefacts; selecting a node or relationship in the graph auto-expands the Inspector.
 
 MERGE Cypher upserts nodes by uuid — safe to run repeatedly. CREATE always makes new nodes. See the [CreateMerge artefact](https://github.com/diffo-dev/artefactory) for a visual explanation of the difference.
 

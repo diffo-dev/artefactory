@@ -76,19 +76,44 @@ Artefact.Cypher.create(us_two)
 Artefact.Arrows.to_json(us_two)
 ```
 
-## Combining Artefacts
+## Combining and Extending Artefacts
 
 ```elixir
 # compose — disjoint union, nodes remain independent
 combined = Artefact.compose(a1, a2)
 
-# harmonise — merge nodes bound by shared uuid
-# lower uuid wins identity, labels are unioned, left (heartside) wins on property conflict
+# combine — pipeline-friendly union; bindings auto-found via shared uuid.
+# Delegates to harmonise. Raises MatchError if no shared nodes.
+my_knowing
+|> Artefact.combine(my_valuing)
+|> Artefact.combine(my_being)
+|> Artefact.combine(my_doing, title: "MeMind", description: "Mind of Me")
+
+# harmonise — union via declared bindings.
+# Lower uuid wins identity, labels are unioned, left wins on property conflict.
 {:ok, bindings} = Artefact.Binding.find(a1, a2)
 harmonised = Artefact.harmonise(a1, a2, bindings)
+
+# graft — extend an existing artefact inline with new nodes and
+# relationships. args matches Artefact.new's inline shape, but every
+# node MUST carry :uuid (no auto-find — uuid is the binding).
+# Nodes whose uuid lives in left bind to it (labels unioned, properties
+# merged left-wins). Nodes with new uuids are added.
+me_mind
+|> Artefact.graft(
+     [
+       nodes: [
+         {:me,          [uuid: "019ddb71-c70b-7b3e-83b1-58f4d0be2852"]},   # bind-only
+         {:stewardship, [labels: ["Knowing"], uuid: "019df318-698c-77d6-bc7b-ea041a019a7f"]}
+       ],
+       relationships: [[from: :me, type: "KNOWING", to: :stewardship]]
+     ],
+     title: "MeMind + Stewardship",
+     description: "Stewardship grafted onto MeMind."
+   )
 ```
 
-Provenance is recorded automatically — every artefact carries metadata describing how it was created, including the module it was built in and, for harmonised artefacts, the title, base_label and uuid of each source.
+Provenance is recorded automatically — every artefact carries metadata describing how it was created, including the calling module and, for derived artefacts, a summary of each source.
 
 ## Importing from Arrows JSON
 
