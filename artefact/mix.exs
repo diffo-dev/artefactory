@@ -34,6 +34,7 @@ defmodule Artefact.MixProject do
   defp deps do
     [
       {:jason, "~> 1.4"},
+      {:splode, "~> 0.3"},
       {:ex_doc, "~> 0.37", only: [:dev, :test], runtime: false}
     ]
   end
