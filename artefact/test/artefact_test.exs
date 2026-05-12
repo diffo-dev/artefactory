@@ -1983,4 +1983,158 @@ defmodule ArtefactTest do
       assert Artefact.is_valid?(result)
     end
   end
+
+  describe "Artefact.UUID.from_name/1" do
+    test "produces a valid UUIDv7" do
+      uuid = Artefact.UUID.from_name("n0")
+      assert Artefact.UUID.valid?(uuid)
+    end
+
+    test "is deterministic — same name always gives same UUID" do
+      assert Artefact.UUID.from_name("hello") == Artefact.UUID.from_name("hello")
+    end
+
+    test "different names give different UUIDs" do
+      refute Artefact.UUID.from_name("n0") == Artefact.UUID.from_name("n1")
+    end
+  end
+
+  describe "Artefact.Mermaid.from_mmd!/2" do
+    test "parses a minimal exported diagram (round-trip node/rel counts)" do
+      require Artefact
+
+      source = Artefact.new!(
+        title: "UsTwo",
+        base_label: "Agent",
+        nodes: [
+          matt:   [labels: ["Agent", "Me"],  properties: %{"name" => "Matt"}],
+          claude: [labels: ["Agent", "You"], properties: %{"name" => "Claude"}]
+        ],
+        relationships: [[from: :matt, type: "US_TWO", to: :claude]]
+      )
+      |> Artefact.Mermaid.export()
+
+      result = Artefact.Mermaid.from_mmd!(source)
+
+      assert length(result.graph.nodes) == 2
+      assert length(result.graph.relationships) == 1
+    end
+
+    test "round-trip: export → from_mmd! → export produces identical output" do
+      require Artefact
+
+      a = Artefact.new!(
+        title: "Round Trip",
+        base_label: "Concept",
+        nodes: [
+          x: [labels: ["Concept"], properties: %{"name" => "Alpha"}],
+          y: [labels: ["Concept"], properties: %{"name" => "Beta"}]
+        ],
+        relationships: [[from: :x, type: "RELATES", to: :y]]
+      )
+
+      mmd1 = Artefact.Mermaid.export(a)
+      mmd2 = mmd1 |> Artefact.Mermaid.from_mmd!() |> Artefact.Mermaid.export()
+
+      assert mmd1 == mmd2
+    end
+
+    test "click tooltip becomes node description property" do
+      source = """
+      graph LR
+        n0(("Alice"))
+        click n0 "The description"
+      """
+
+      result = Artefact.Mermaid.from_mmd!(source)
+      node = hd(result.graph.nodes)
+      assert node.properties["description"] == "The description"
+    end
+
+    test "parses hand-authored mermaid with bracket nodes and edge labels" do
+      source = """
+      graph LR
+        A[Alpha] -->|KNOWS| B[Beta]
+        B -->|USES| C[Gamma]
+      """
+
+      result = Artefact.Mermaid.from_mmd!(source)
+      assert length(result.graph.nodes) == 3
+      assert length(result.graph.relationships) == 2
+      types = Enum.map(result.graph.relationships, & &1.type)
+      assert "KNOWS" in types
+      assert "USES" in types
+    end
+
+    test "same mermaid node id in two diagrams produces same UUID" do
+      # node names default to their mermaid id when declared inline on an edge line
+      source_a = "graph LR\n  shared -->|REL| other_a"
+      source_b = "graph LR\n  shared -->|REL| other_b"
+
+      result_a = Artefact.Mermaid.from_mmd!(source_a)
+      result_b = Artefact.Mermaid.from_mmd!(source_b)
+
+      uuid_a = Enum.find(result_a.graph.nodes, &(&1.properties["name"] == "shared")).uuid
+      uuid_b = Enum.find(result_b.graph.nodes, &(&1.properties["name"] == "shared")).uuid
+
+      assert uuid_a == uuid_b
+    end
+
+    test "shared UUID enables combine!/2 to find binding across two parsed diagrams" do
+      require Artefact
+
+      source_a = "graph LR\n  shared(\"Hub\") -->|TO| leaf_a(\"Leaf A\")"
+      source_b = "graph LR\n  shared(\"Hub\") -->|TO| leaf_b(\"Leaf B\")"
+
+      a = Artefact.Mermaid.from_mmd!(source_a, base_label: "Hub")
+      b = Artefact.Mermaid.from_mmd!(source_b, base_label: "Leaf")
+
+      combined = Artefact.combine!(a, b)
+
+      # 3 unique nodes (shared hub + leaf_a + leaf_b) and 2 relationships
+      assert length(combined.graph.nodes) == 3
+      assert length(combined.graph.relationships) == 2
+    end
+
+    test "YAML front matter title is parsed" do
+      source = """
+      ---
+      title: My Diagram
+      ---
+      graph LR
+        a(("Alpha")) -->|REL| b(("Beta"))
+      """
+
+      result = Artefact.Mermaid.from_mmd!(source)
+      assert result.title == "My Diagram"
+    end
+
+    test ":title opt overrides parsed front matter" do
+      source = """
+      ---
+      title: Original
+      ---
+      graph LR
+        a(("Alpha"))
+      """
+
+      result = Artefact.Mermaid.from_mmd!(source, title: "Override")
+      assert result.title == "Override"
+    end
+
+    test "LABEL · name convention recovers both label and name" do
+      # Separate declaration line so the node regex fires (not the edge regex)
+      source = """
+      graph LR
+        val_0["VALUE · 0"]
+        value["VALUE · value"]
+        val_0 -->|ENUMERATES| value
+      """
+
+      result = Artefact.Mermaid.from_mmd!(source)
+      node = Enum.find(result.graph.nodes, &(&1.properties["name"] == "0"))
+      assert node != nil
+      assert "VALUE" in node.labels
+    end
+  end
 end

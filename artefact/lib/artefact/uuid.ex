@@ -29,6 +29,23 @@ defmodule Artefact.UUID do
     format(a, b, 0x7000 ||| c, 0x8000000000000000 ||| d)
   end
 
+  @doc """
+  Deterministic UUIDv7-shaped identifier derived from a name string.
+
+  Uses SHA-256 of the name in place of random bytes, with version and variant
+  bits forced identically to `generate_v7/0`. The timestamp field is filled from
+  the hash rather than the clock, so the result is not time-ordered, but it is
+  stable: the same name always produces the same UUID. Passes `valid?/1`.
+  """
+  def from_name(name) when is_binary(name) do
+    <<ts::48, rand_a::12, rand_b::62, _::bits>> = :crypto.hash(:sha256, name)
+
+    <<a::32, b::16, _::4, c::12, _::2, d::62>> =
+      <<ts::48, 7::4, rand_a::12, 0b10::2, rand_b::62>>
+
+    format(a, b, 0x7000 ||| c, 0x8000000000000000 ||| d)
+  end
+
   @doc "Compare two UUIDv7 strings. Returns the lower (earlier) of the two."
   def harmonise(uuid_a, uuid_b) when uuid_a <= uuid_b, do: uuid_a
   def harmonise(_uuid_a, uuid_b), do: uuid_b
