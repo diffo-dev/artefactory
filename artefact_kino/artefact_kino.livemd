@@ -107,10 +107,11 @@ of how many labels either artefact contains. An `Agent` node will be the same sh
 blue-green in a two-label artefact as it is in a ten-label one. You can follow a concept
 by colour across panels without thinking about it.
 
-**Stable header height.** When an artefact carries a long description — a Cypher query or
-a chapter summary — the header expands and the graph viewports in the two panels no longer
-align. Pass `max_description_lines:` to cap the description to a fixed number of lines with
-overflow hidden. Both panels keep the same height and the graphs line up.
+**Stable header height.** When artefacts have descriptions of different lengths — or when
+one has no description at all — the headers expand differently and the graph viewports no
+longer align. Pass `description_lines:` to reserve a fixed-height description area of
+exactly that many lines. Content is clipped if it is longer; the space is held empty if
+there is no description. Both panels share the same header height and the graphs line up.
 
 ```elixir
 require Artefact
@@ -146,8 +147,8 @@ integrated =
   )
 
 Kino.Layout.grid([
-  ArtefactKino.new(section,    max_description_lines: 2),
-  ArtefactKino.new(integrated, max_description_lines: 2)
+  ArtefactKino.new(section,    description_lines: 2),
+  ArtefactKino.new(integrated, description_lines: 2)
 ], columns: 2)
 ```
 
