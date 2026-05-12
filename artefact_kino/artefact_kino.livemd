@@ -96,6 +96,64 @@ Harmonise merges labels and properties of bound nodes, and properties of bound r
 
 The knowledge we have harmonized here is ArtefactCreateMerge, a combination of Artefact and the CreateMerge Artefacts.
 
+## Side by Side
+
+A common pattern is showing knowledge grow progressively — a section artefact on the left,
+the integrated whole on the right, chapter by chapter. `Kino.Layout.grid` places two
+`ArtefactKino` widgets side by side. Two small things make this work well.
+
+**Consistent colours.** The same label string always produces the same colour, regardless
+of how many labels either artefact contains. An `Agent` node will be the same shade of
+blue-green in a two-label artefact as it is in a ten-label one. You can follow a concept
+by colour across panels without thinking about it.
+
+**Stable header height.** When an artefact carries a long description — a Cypher query or
+a chapter summary — the header expands and the graph viewports in the two panels no longer
+align. Pass `max_description_lines:` to cap the description to a fixed number of lines with
+overflow hidden. Both panels keep the same height and the graphs line up.
+
+```elixir
+require Artefact
+
+section =
+  Artefact.new!(
+    title: "Section 1",
+    base_label: "Knowing",
+    description: "MATCH (a:Agent)-[:KNOWS]->(b:Concept)\nRETURN a, b",
+    nodes: [
+      matt:    [labels: ["Agent"],   properties: %{"name" => "Matt"},    uuid: "019da897-f2de-77ca-b5a4-40f0c3730943"],
+      knowing: [labels: ["Concept"], properties: %{"name" => "Knowing"}, uuid: "019da897-0000-7000-8000-000000000001"]
+    ],
+    relationships: [
+      [from: :matt, type: "KNOWS", to: :knowing]
+    ]
+  )
+
+integrated =
+  Artefact.new!(
+    title: "Integrated",
+    base_label: "Valuing",
+    description: "MATCH (a:Agent)-[:KNOWS|VALUES]->(b:Concept)\nRETURN a, b",
+    nodes: [
+      matt:   [labels: ["Agent"],   properties: %{"name" => "Matt"},    uuid: "019da897-f2de-77ca-b5a4-40f0c3730943"],
+      know:   [labels: ["Concept"], properties: %{"name" => "Knowing"}, uuid: "019da897-0000-7000-8000-000000000001"],
+      value:  [labels: ["Concept"], properties: %{"name" => "Valuing"}, uuid: "019da897-0000-7000-8000-000000000002"]
+    ],
+    relationships: [
+      [from: :matt, type: "KNOWS",  to: :know],
+      [from: :matt, type: "VALUES", to: :value]
+    ]
+  )
+
+Kino.Layout.grid([
+  ArtefactKino.new(section,    max_description_lines: 2),
+  ArtefactKino.new(integrated, max_description_lines: 2)
+], columns: 2)
+```
+
+Notice that the `Agent` node (Matt) is the same colour in both panels, and the two graph
+viewports sit at the same height despite the descriptions being different lengths.
+
 ## What Next?
 
 Artefacts are knowledge graph fragments. We like to store knowledge in graphical databases, so explore exporting cypher to a graph database with creat and merge. Review the CreateMerge Artifact to understand what create and merge are best for.

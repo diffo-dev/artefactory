@@ -28,14 +28,18 @@ defmodule ArtefactKino do
 
   Options:
   - `default:` — `:create` (default) or `:merge`
+  - `max_description_lines:` — integer; caps the description to this many
+    lines with overflow hidden. Useful when placing widgets side by side so
+    that long descriptions do not cause misaligned graph viewports.
   """
   def new(%Artefact{} = artefact, opts \\ []) do
     Artefact.validate!(artefact)
     default = Keyword.get(opts, :default, :create)
-    Kino.JS.new(__MODULE__, build_data(artefact, default))
+    max_description_lines = Keyword.get(opts, :max_description_lines, nil)
+    Kino.JS.new(__MODULE__, build_data(artefact, default, max_description_lines))
   end
 
-  defp build_data(artefact, default) do
+  defp build_data(artefact, default, max_description_lines) do
     %{
       nodes: vis_nodes(artefact),
       edges: vis_edges(artefact),
@@ -46,6 +50,7 @@ defmodule ArtefactKino do
       default: Atom.to_string(default),
       title: artefact.title || artefact.base_label || "Artefact",
       description: artefact.description,
+      max_description_lines: max_description_lines,
       artefact_rows: artefact_rows(artefact),
       nodes_rows: nodes_rows(artefact),
       rels_rows: rels_rows(artefact)
@@ -135,13 +140,12 @@ defmodule ArtefactKino do
 
     // -- colour theory --
 
-    function buildLabelHues(nodes) {
-      const labels = new Set();
-      nodes.forEach(n => n.labels.forEach(l => labels.add(l)));
-      const sorted = [...labels].sort();
-      const hues = {};
-      sorted.forEach((l, i) => { hues[l] = (i / sorted.length) * 360; });
-      return hues;
+    function labelToHue(label) {
+      let h = 0;
+      for (let i = 0; i < label.length; i++) {
+        h = (h * 31 + label.charCodeAt(i)) & 0xffffffff;
+      }
+      return (h >>> 0) % 360;
     }
 
     function blendHues(hues) {
@@ -164,10 +168,9 @@ defmodule ArtefactKino do
       return "#" + [r, g, b].map(c => Math.round(Math.max(0, Math.min(1, c)) * 255).toString(16).padStart(2, "0")).join("");
     }
 
-    function nodeColour(labels, labelHues) {
+    function nodeColour(labels) {
       if (!labels || labels.length === 0) return { bg: "#2a2a2a", border: "#555" };
-      const hues   = labels.map(l => labelHues[l] ?? 0);
-      const blended = blendHues(hues);
+      const blended = blendHues(labels.map(labelToHue));
       const [r1, g1, b1] = hslToRGB(blended, 55, 30);
       const [r2, g2, b2] = hslToRGB(blended, 65, 50);
       return {
@@ -207,11 +210,15 @@ defmodule ArtefactKino do
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
 
+      const descStyle = data.max_description_lines
+        ? `font-size:11px;color:#888;margin-top:2px;font-style:italic;display:-webkit-box;-webkit-line-clamp:${data.max_description_lines};-webkit-box-orient:vertical;overflow:hidden;`
+        : `font-size:11px;color:#888;margin-top:2px;font-style:italic;white-space:pre-line;`;
+
       const headerHtml = `
         <div style="padding:6px 8px;border-bottom:1px solid #333;">
           <div style="font-size:13px;color:#aaa;">${escapeHtml(data.title)}</div>
           ${data.description
-            ? `<div style="font-size:11px;color:#888;margin-top:2px;font-style:italic;white-space:pre-line;">${escapeHtml(data.description)}</div>`
+            ? `<div style="${descStyle}">${escapeHtml(data.description)}</div>`
             : ""}
         </div>`;
 
@@ -373,10 +380,8 @@ defmodule ArtefactKino do
         })
         .then(() => {
           if (!window.vis) return;
-          const labelHues = buildLabelHues(data.nodes);
-
           const nodes = new vis.DataSet(data.nodes.map(n => {
-            const { bg, border } = nodeColour(n.labels, labelHues);
+            const { bg, border } = nodeColour(n.labels);
             return {
               ...n,
               shape: "ellipse",
