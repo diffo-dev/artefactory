@@ -152,6 +152,17 @@ Kino.Layout.grid([
 ], columns: 2)
 ```
 
+Add `panel_height_px:` to fix the total widget height. The header takes what it needs and
+the graph row fills the rest. Use both options together and the widget dimensions are fully
+locked — the page never reflows as the artefact grows across panels.
+
+```elixir
+Kino.Layout.grid([
+  ArtefactKino.new(section,    description_lines: 2, panel_height_px: 600),
+  ArtefactKino.new(integrated, description_lines: 2, panel_height_px: 600)
+], columns: 2)
+```
+
 Notice that the `Agent` node (Matt) is the same colour in both panels, and the two graph
 viewports sit at the same height despite the descriptions being different lengths.
 

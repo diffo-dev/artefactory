@@ -32,15 +32,20 @@ defmodule ArtefactKino do
     of exactly this many lines. Content is clipped if longer; an empty area
     is reserved if there is no description. Keeps side-by-side graph viewports
     at the same height regardless of description length or presence.
+  - `panel_height_px:` — integer; fixes the total widget height in pixels.
+    The header takes what it needs and the graph row fills the rest. Use
+    together with `description_lines:` to fully lock widget dimensions across
+    a side-by-side progression so the page never reflows between panels.
   """
   def new(%Artefact{} = artefact, opts \\ []) do
     Artefact.validate!(artefact)
     default = Keyword.get(opts, :default, :create)
     description_lines = Keyword.get(opts, :description_lines, nil)
-    Kino.JS.new(__MODULE__, build_data(artefact, default, description_lines))
+    panel_height_px = Keyword.get(opts, :panel_height_px, nil)
+    Kino.JS.new(__MODULE__, build_data(artefact, default, description_lines, panel_height_px))
   end
 
-  defp build_data(artefact, default, description_lines) do
+  defp build_data(artefact, default, description_lines, panel_height_px) do
     %{
       nodes: vis_nodes(artefact),
       edges: vis_edges(artefact),
@@ -52,6 +57,7 @@ defmodule ArtefactKino do
       title: artefact.title || artefact.base_label || "Artefact",
       description: artefact.description,
       description_lines: description_lines,
+      panel_height_px: panel_height_px,
       artefact_rows: artefact_rows(artefact),
       nodes_rows: nodes_rows(artefact),
       rels_rows: rels_rows(artefact)
@@ -202,7 +208,8 @@ defmodule ArtefactKino do
     }
 
     export function init(ctx, data) {
-      ctx.root.style.cssText = "font-family:monospace;background:#111;color:#e0e0e0;";
+      ctx.root.style.cssText = "font-family:monospace;background:#111;color:#e0e0e0;" +
+        (data.panel_height_px ? `height:${data.panel_height_px}px;overflow:hidden;display:flex;flex-direction:column;` : "");
 
       const escapeHtml = (s) => String(s)
         .replace(/&/g, "&amp;")
@@ -228,9 +235,13 @@ defmodule ArtefactKino do
           ${descHtml}
         </div>`;
 
+      const rowStyle = data.panel_height_px
+        ? "display:flex;flex:1;min-height:0;gap:0;"
+        : "display:flex;height:560px;gap:0;";
+
       ctx.root.innerHTML = `
         ${headerHtml}
-        <div style="display:flex;height:560px;gap:0;">
+        <div style="${rowStyle}">
 
           <!-- graph panel -->
           <div style="flex:1.2;display:flex;flex-direction:column;border-right:1px solid #333;">
