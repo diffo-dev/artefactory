@@ -556,6 +556,7 @@ defmodule ArtefactTest do
                 tag: :self_harmonise,
                 details: %{uuid: uuid}
               }} = Artefact.harmonise(a, a, bindings)
+
       assert uuid == a.uuid
     end
 
@@ -1308,6 +1309,34 @@ defmodule ArtefactTest do
       assert_raise Artefact.Error.Operation, ~r/combine: no_shared_bindings/, fn ->
         Artefact.combine!(heart, other)
       end
+    end
+
+    test "combine!/2 produces unique relationship IDs" do
+      shared_uuid = "019d0000-0000-7000-8000-000000000099"
+
+      a =
+        Artefact.new!(
+          base_label: "Knowing",
+          nodes: [
+            shared: [labels: ["Node"], uuid: shared_uuid],
+            b: [labels: ["B"]]
+          ],
+          relationships: [[from: :shared, type: "KNOWS", to: :b]]
+        )
+
+      b =
+        Artefact.new!(
+          base_label: "Valuing",
+          nodes: [
+            shared: [labels: ["Node"], uuid: shared_uuid],
+            c: [labels: ["C"]]
+          ],
+          relationships: [[from: :shared, type: "LOVES", to: :c]]
+        )
+
+      combined = Artefact.combine!(a, b)
+      ids = Enum.map(combined.graph.relationships, & &1.id)
+      assert ids == Enum.uniq(ids), "duplicate relationship IDs after combine!/2"
     end
   end
 
