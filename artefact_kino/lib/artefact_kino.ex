@@ -28,18 +28,19 @@ defmodule ArtefactKino do
 
   Options:
   - `default:` — `:create` (default) or `:merge`
-  - `max_description_lines:` — integer; caps the description to this many
-    lines with overflow hidden. Useful when placing widgets side by side so
-    that long descriptions do not cause misaligned graph viewports.
+  - `description_lines:` — integer; reserves a fixed-height description area
+    of exactly this many lines. Content is clipped if longer; an empty area
+    is reserved if there is no description. Keeps side-by-side graph viewports
+    at the same height regardless of description length or presence.
   """
   def new(%Artefact{} = artefact, opts \\ []) do
     Artefact.validate!(artefact)
     default = Keyword.get(opts, :default, :create)
-    max_description_lines = Keyword.get(opts, :max_description_lines, nil)
-    Kino.JS.new(__MODULE__, build_data(artefact, default, max_description_lines))
+    description_lines = Keyword.get(opts, :description_lines, nil)
+    Kino.JS.new(__MODULE__, build_data(artefact, default, description_lines))
   end
 
-  defp build_data(artefact, default, max_description_lines) do
+  defp build_data(artefact, default, description_lines) do
     %{
       nodes: vis_nodes(artefact),
       edges: vis_edges(artefact),
@@ -50,7 +51,7 @@ defmodule ArtefactKino do
       default: Atom.to_string(default),
       title: artefact.title || artefact.base_label || "Artefact",
       description: artefact.description,
-      max_description_lines: max_description_lines,
+      description_lines: description_lines,
       artefact_rows: artefact_rows(artefact),
       nodes_rows: nodes_rows(artefact),
       rels_rows: rels_rows(artefact)
@@ -210,16 +211,21 @@ defmodule ArtefactKino do
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
 
-      const descStyle = data.max_description_lines
-        ? `font-size:11px;color:#888;margin-top:2px;font-style:italic;display:-webkit-box;-webkit-line-clamp:${data.max_description_lines};-webkit-box-orient:vertical;overflow:hidden;`
-        : `font-size:11px;color:#888;margin-top:2px;font-style:italic;white-space:pre-line;`;
+      const descHtml = (() => {
+        if (data.description_lines) {
+          const style = `font-size:11px;color:#888;margin-top:2px;font-style:italic;line-height:1.4;height:calc(${data.description_lines} * 1.4em);overflow:hidden;white-space:pre-line;`;
+          return `<div style="${style}">${data.description ? escapeHtml(data.description) : ""}</div>`;
+        }
+        if (data.description) {
+          return `<div style="font-size:11px;color:#888;margin-top:2px;font-style:italic;white-space:pre-line;">${escapeHtml(data.description)}</div>`;
+        }
+        return "";
+      })();
 
       const headerHtml = `
         <div style="padding:6px 8px;border-bottom:1px solid #333;">
           <div style="font-size:13px;color:#aaa;">${escapeHtml(data.title)}</div>
-          ${data.description
-            ? `<div style="${descStyle}">${escapeHtml(data.description)}</div>`
-            : ""}
+          ${descHtml}
         </div>`;
 
       ctx.root.innerHTML = `
