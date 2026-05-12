@@ -157,11 +157,16 @@ defmodule Artefact.Op do
       nodes_from_a =
         Enum.map(a1.graph.nodes, fn n -> Map.get(primary_updates, n.uuid, n) end)
 
+      rel_offset = length(a1.graph.relationships)
+
       rels_from_b =
-        Enum.map(a2.graph.relationships, fn rel ->
+        a2.graph.relationships
+        |> Enum.with_index(rel_offset)
+        |> Enum.map(fn {rel, i} ->
           %{
             rel
-            | from_id: Map.get(b_id_remap, rel.from_id, rel.from_id),
+            | id: "r#{i}",
+              from_id: Map.get(b_id_remap, rel.from_id, rel.from_id),
               to_id: Map.get(b_id_remap, rel.to_id, rel.to_id)
           }
         end)
