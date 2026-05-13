@@ -35,6 +35,7 @@ defmodule Artefact.MixProject do
     [
       {:jason, "~> 1.4"},
       {:splode, "~> 0.3"},
+      {:igniter, ">= 0.6.29 and < 1.0.0-0", optional: true},
       {:ex_doc, "~> 0.37", only: [:dev, :test], runtime: false}
     ]
   end
