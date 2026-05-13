@@ -17,10 +17,20 @@ Named databases on Neo4j Community Edition require **DozerDB** — a free plugin
 
 ## Installation
 
+The preferred way to install ArtefactoryNeo4j is via Igniter:
+
+```bash
+mix igniter.install artefactory_neo4j
+```
+
+This automatically configures Bolty in `runtime.exs`, adds `Bolty` to the supervision tree, and installs the `artefact` dependency.
+
+Or add the dependency manually:
+
 ```elixir
 def deps do
   [
-    {:artefactory_neo4j, "~> 0.1"}
+    {:artefactory_neo4j, "~> 0.3"}
   ]
 end
 ```

@@ -5,7 +5,7 @@ defmodule Artefact.MixProject do
   @moduledoc false
   use Mix.Project
 
-  @version "0.2.0"
+  @version "0.3.0"
   @github_url "https://github.com/diffo-dev/artefactory"
 
   def project do
@@ -35,6 +35,7 @@ defmodule Artefact.MixProject do
     [
       {:jason, "~> 1.4"},
       {:splode, "~> 0.3"},
+      {:igniter, ">= 0.6.29 and < 1.0.0-0", optional: true},
       {:ex_doc, "~> 0.37", only: [:dev, :test], runtime: false}
     ]
   end
@@ -42,7 +43,7 @@ defmodule Artefact.MixProject do
   defp package do
     [
       licenses: ["MIT"],
-      files: ~w(lib .formatter.exs mix.exs README* CHANGELOG* MIGRATION* LICENSES),
+      files: ~w(lib .formatter.exs mix.exs README* CHANGELOG* MIGRATION* LICENSES usage-rules.md),
       links: %{"GitHub" => @github_url}
     ]
   end

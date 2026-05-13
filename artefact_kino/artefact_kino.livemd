@@ -7,7 +7,7 @@ SPDX-License-Identifier: MIT
 
 ```elixir
 Mix.install([
-  {:artefact_kino, "~> 0.1.3"},
+  {:artefact_kino, "~> 0.3.0"},
   {:req, "~> 0.5"}
 ])
 ```
@@ -95,6 +95,76 @@ Artefact.harmonise() creates the new combined Artefact.
 Harmonise merges labels and properties of bound nodes, and properties of bound relationships. The left side (heart-side) is the knowledge we hold most dear. Properties with the same key and different value have the value have heart side precedence.
 
 The knowledge we have harmonized here is ArtefactCreateMerge, a combination of Artefact and the CreateMerge Artefacts.
+
+## Side by Side
+
+A common pattern is showing knowledge grow progressively — a section artefact on the left,
+the integrated whole on the right, chapter by chapter. `Kino.Layout.grid` places two
+`ArtefactKino` widgets side by side. Two small things make this work well.
+
+**Consistent colours.** The same label string always produces the same colour, regardless
+of how many labels either artefact contains. An `Agent` node will be the same shade of
+blue-green in a two-label artefact as it is in a ten-label one. You can follow a concept
+by colour across panels without thinking about it.
+
+**Stable header height.** When artefacts have descriptions of different lengths — or when
+one has no description at all — the headers expand differently and the graph viewports no
+longer align. Pass `description_lines:` to reserve a fixed-height description area of
+exactly that many lines. Content is clipped if it is longer; the space is held empty if
+there is no description. Both panels share the same header height and the graphs line up.
+
+```elixir
+require Artefact
+
+section =
+  Artefact.new!(
+    title: "Section 1",
+    base_label: "Knowing",
+    description: "MATCH (a:Agent)-[:KNOWS]->(b:Concept)\nRETURN a, b",
+    nodes: [
+      matt:    [labels: ["Agent"],   properties: %{"name" => "Matt"},    uuid: "019da897-f2de-77ca-b5a4-40f0c3730943"],
+      knowing: [labels: ["Concept"], properties: %{"name" => "Knowing"}, uuid: "019da897-0000-7000-8000-000000000001"]
+    ],
+    relationships: [
+      [from: :matt, type: "KNOWS", to: :knowing]
+    ]
+  )
+
+integrated =
+  Artefact.new!(
+    title: "Integrated",
+    base_label: "Valuing",
+    description: "MATCH (a:Agent)-[:KNOWS|VALUES]->(b:Concept)\nRETURN a, b",
+    nodes: [
+      matt:   [labels: ["Agent"],   properties: %{"name" => "Matt"},    uuid: "019da897-f2de-77ca-b5a4-40f0c3730943"],
+      know:   [labels: ["Concept"], properties: %{"name" => "Knowing"}, uuid: "019da897-0000-7000-8000-000000000001"],
+      value:  [labels: ["Concept"], properties: %{"name" => "Valuing"}, uuid: "019da897-0000-7000-8000-000000000002"]
+    ],
+    relationships: [
+      [from: :matt, type: "KNOWS",  to: :know],
+      [from: :matt, type: "VALUES", to: :value]
+    ]
+  )
+
+Kino.Layout.grid([
+  ArtefactKino.new(section,    description_lines: 2),
+  ArtefactKino.new(integrated, description_lines: 2)
+], columns: 2)
+```
+
+Add `panel_height_px:` to fix the total widget height. The header takes what it needs and
+the graph row fills the rest. Use both options together and the widget dimensions are fully
+locked — the page never reflows as the artefact grows across panels.
+
+```elixir
+Kino.Layout.grid([
+  ArtefactKino.new(section,    description_lines: 2, panel_height_px: 600),
+  ArtefactKino.new(integrated, description_lines: 2, panel_height_px: 600)
+], columns: 2)
+```
+
+Notice that the `Agent` node (Matt) is the same colour in both panels, and the two graph
+viewports sit at the same height despite the descriptions being different lengths.
 
 ## What Next?
 

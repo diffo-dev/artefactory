@@ -5,7 +5,7 @@ defmodule ArtefactoryNeo4j.MixProject do
   @moduledoc false
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.3.0"
   @github_url "https://github.com/diffo-dev/artefactory"
 
   def project do
@@ -30,8 +30,10 @@ defmodule ArtefactoryNeo4j.MixProject do
 
   defp deps do
     [
-      {:artefact, "~> 0.1"},
+      {:artefact, "~> 0.3.0"},
       {:bolty, "~> 0.0.9"},
+      {:igniter, ">= 0.6.29 and < 1.0.0-0", optional: true},
+      {:usage_rules, "~> 1.0", only: :dev, runtime: false},
       {:ex_doc, "~> 0.37", only: [:dev, :test], runtime: false}
     ]
   end
@@ -39,7 +41,7 @@ defmodule ArtefactoryNeo4j.MixProject do
   defp package do
     [
       licenses: ["MIT"],
-      files: ~w(lib .formatter.exs mix.exs README* CHANGELOG* LICENSES),
+      files: ~w(lib .formatter.exs mix.exs README* CHANGELOG* LICENSES usage-rules.md),
       links: %{"GitHub" => @github_url}
     ]
   end

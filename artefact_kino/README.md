@@ -29,7 +29,7 @@ MERGE Cypher upserts nodes by uuid — safe to run repeatedly. CREATE always mak
 ```elixir
 def deps do
   [
-    {:artefact_kino, "~> 0.1"}
+    {:artefact_kino, "~> 0.3"}
   ]
 end
 ```

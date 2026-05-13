@@ -5,6 +5,21 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## 0.3.0 — 2026-05-13
+
+### Side-by-side layout options
+
+- `description_lines:` option — reserves a fixed-height description area of exactly N lines. Content is clipped if longer; space is held empty if there is no description. Ensures two side-by-side panels share the same header height regardless of description length. Closes [#39](https://github.com/diffo-dev/artefactory/issues/39).
+- `panel_height_px:` option — fixes the total widget height. The header takes what it needs; the graph row fills the rest. Prevents page reflow as artefacts grow across panels in a progressive-reveal livebook.
+
+### Bug fix
+
+- Node colours are now derived from a deterministic string hash of the label name rather than the label's position in the sorted list. The same label string always produces the same colour regardless of how many other labels exist in the artefact — a node can be followed by colour across panels without thinking about it. Closes [#39](https://github.com/diffo-dev/artefactory/issues/39).
+
+### Dependencies
+
+- Bumps `artefact` requirement to `~> 0.3.0`.
+
 ## 0.2.0 — 2026-05-05
 
 - Bumps `artefact` requirement to `~> 0.2.0`. `ArtefactKino.new/1,2` continues to validate its input via `Artefact.validate!/1`, which now raises `Artefact.Error.Invalid` instead of `ArgumentError` when an invalid artefact is passed in. Behaviour is otherwise unchanged.

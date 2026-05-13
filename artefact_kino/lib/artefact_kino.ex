@@ -28,14 +28,24 @@ defmodule ArtefactKino do
 
   Options:
   - `default:` — `:create` (default) or `:merge`
+  - `description_lines:` — integer; reserves a fixed-height description area
+    of exactly this many lines. Content is clipped if longer; an empty area
+    is reserved if there is no description. Keeps side-by-side graph viewports
+    at the same height regardless of description length or presence.
+  - `panel_height_px:` — integer; fixes the total widget height in pixels.
+    The header takes what it needs and the graph row fills the rest. Use
+    together with `description_lines:` to fully lock widget dimensions across
+    a side-by-side progression so the page never reflows between panels.
   """
   def new(%Artefact{} = artefact, opts \\ []) do
     Artefact.validate!(artefact)
     default = Keyword.get(opts, :default, :create)
-    Kino.JS.new(__MODULE__, build_data(artefact, default))
+    description_lines = Keyword.get(opts, :description_lines, nil)
+    panel_height_px = Keyword.get(opts, :panel_height_px, nil)
+    Kino.JS.new(__MODULE__, build_data(artefact, default, description_lines, panel_height_px))
   end
 
-  defp build_data(artefact, default) do
+  defp build_data(artefact, default, description_lines, panel_height_px) do
     %{
       nodes: vis_nodes(artefact),
       edges: vis_edges(artefact),
@@ -46,6 +56,8 @@ defmodule ArtefactKino do
       default: Atom.to_string(default),
       title: artefact.title || artefact.base_label || "Artefact",
       description: artefact.description,
+      description_lines: description_lines,
+      panel_height_px: panel_height_px,
       artefact_rows: artefact_rows(artefact),
       nodes_rows: nodes_rows(artefact),
       rels_rows: rels_rows(artefact)
@@ -135,13 +147,12 @@ defmodule ArtefactKino do
 
     // -- colour theory --
 
-    function buildLabelHues(nodes) {
-      const labels = new Set();
-      nodes.forEach(n => n.labels.forEach(l => labels.add(l)));
-      const sorted = [...labels].sort();
-      const hues = {};
-      sorted.forEach((l, i) => { hues[l] = (i / sorted.length) * 360; });
-      return hues;
+    function labelToHue(label) {
+      let h = 0;
+      for (let i = 0; i < label.length; i++) {
+        h = (h * 31 + label.charCodeAt(i)) & 0xffffffff;
+      }
+      return (h >>> 0) % 360;
     }
 
     function blendHues(hues) {
@@ -164,10 +175,9 @@ defmodule ArtefactKino do
       return "#" + [r, g, b].map(c => Math.round(Math.max(0, Math.min(1, c)) * 255).toString(16).padStart(2, "0")).join("");
     }
 
-    function nodeColour(labels, labelHues) {
+    function nodeColour(labels) {
       if (!labels || labels.length === 0) return { bg: "#2a2a2a", border: "#555" };
-      const hues   = labels.map(l => labelHues[l] ?? 0);
-      const blended = blendHues(hues);
+      const blended = blendHues(labels.map(labelToHue));
       const [r1, g1, b1] = hslToRGB(blended, 55, 30);
       const [r2, g2, b2] = hslToRGB(blended, 65, 50);
       return {
@@ -198,7 +208,8 @@ defmodule ArtefactKino do
     }
 
     export function init(ctx, data) {
-      ctx.root.style.cssText = "font-family:monospace;background:#111;color:#e0e0e0;";
+      ctx.root.style.cssText = "font-family:monospace;background:#111;color:#e0e0e0;" +
+        (data.panel_height_px ? `height:${data.panel_height_px}px;overflow:hidden;display:flex;flex-direction:column;` : "");
 
       const escapeHtml = (s) => String(s)
         .replace(/&/g, "&amp;")
@@ -207,17 +218,30 @@ defmodule ArtefactKino do
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
 
+      const descHtml = (() => {
+        if (data.description_lines) {
+          const style = `font-size:11px;color:#888;margin-top:2px;font-style:italic;line-height:1.4;height:calc(${data.description_lines} * 1.4em);overflow:hidden;white-space:pre-line;`;
+          return `<div style="${style}">${data.description ? escapeHtml(data.description) : ""}</div>`;
+        }
+        if (data.description) {
+          return `<div style="font-size:11px;color:#888;margin-top:2px;font-style:italic;white-space:pre-line;">${escapeHtml(data.description)}</div>`;
+        }
+        return "";
+      })();
+
       const headerHtml = `
         <div style="padding:6px 8px;border-bottom:1px solid #333;">
           <div style="font-size:13px;color:#aaa;">${escapeHtml(data.title)}</div>
-          ${data.description
-            ? `<div style="font-size:11px;color:#888;margin-top:2px;font-style:italic;white-space:pre-line;">${escapeHtml(data.description)}</div>`
-            : ""}
+          ${descHtml}
         </div>`;
+
+      const rowStyle = data.panel_height_px
+        ? "display:flex;flex:1;min-height:0;gap:0;"
+        : "display:flex;height:560px;gap:0;";
 
       ctx.root.innerHTML = `
         ${headerHtml}
-        <div style="display:flex;height:560px;gap:0;">
+        <div style="${rowStyle}">
 
           <!-- graph panel -->
           <div style="flex:1.2;display:flex;flex-direction:column;border-right:1px solid #333;">
@@ -373,10 +397,8 @@ defmodule ArtefactKino do
         })
         .then(() => {
           if (!window.vis) return;
-          const labelHues = buildLabelHues(data.nodes);
-
           const nodes = new vis.DataSet(data.nodes.map(n => {
-            const { bg, border } = nodeColour(n.labels, labelHues);
+            const { bg, border } = nodeColour(n.labels);
             return {
               ...n,
               shape: "ellipse",

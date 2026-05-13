@@ -5,6 +5,23 @@ SPDX-License-Identifier: MIT
 
 # Changelog
 
+## 0.3.0 — 2026-05-13
+
+### Mermaid import
+
+- `Artefact.Mermaid.from_mmd!/2` — parse a Mermaid `graph` source string into an `%Artefact{}`. Accepts the round-trip format produced by `export/2` and the broader Mermaid legacy graph syntax. Supports YAML front matter titles, `accDescr:` descriptions, node label conventions (`name<br/>labels` and `LABEL · name`), and `click id "tooltip"` node descriptions.
+- `Artefact.UUID.from_name/1` — derive a deterministic UUIDv7-shaped UUID from a stable name string. Used by `from_mmd!/2` to anchor node identity on the Mermaid node id, ensuring repeated imports bind correctly via `combine!/2`.
+- `export/2` updated to emit `click id "description"` tooltip lines for nodes with a `description` property — present in source, visible on hover, recovered on import.
+
+### Bug fix
+
+- `combine!/2` no longer raises `duplicate relationship ids` when the two input artefacts have disjoint relationships. `harmonise/5` in `Artefact.Op` now reindexes `rels_from_b` with an offset so ids never clash. Closes [#38](https://github.com/diffo-dev/artefactory/issues/38).
+
+### Tooling
+
+- Igniter task `mix artefact.install` — preferred installation method; wires the formatter.
+- `usage-rules.md` — consumer-facing AI agent guidance, compatible with the `usage_rules` hex package ecosystem.
+
 ## 0.2.0 — 2026-05-05 *(breaking)*
 
 ### API shape
