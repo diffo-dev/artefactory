@@ -53,7 +53,7 @@ claude = %Artefact.Node{
   properties: %{"name" => "Claude"}
 }
 
-us_two = Artefact.new(
+us_two = Artefact.new!(
   title: "UsTwo",
   base_label: "UsTwo",
   graph: %Artefact.Graph{

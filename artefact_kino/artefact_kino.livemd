@@ -37,7 +37,7 @@ Try highlighting nodes and relationships in the graph. Explore the Artefact stru
 ```elixir
 require Artefact
 
-us_two = Artefact.new(
+us_two = Artefact.new!(
   title: "UsTwo",
   base_label: "UsTwo",
   nodes: [
