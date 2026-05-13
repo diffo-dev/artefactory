@@ -42,7 +42,7 @@ defmodule Artefact.MixProject do
   defp package do
     [
       licenses: ["MIT"],
-      files: ~w(lib .formatter.exs mix.exs README* CHANGELOG* MIGRATION* LICENSES),
+      files: ~w(lib .formatter.exs mix.exs README* CHANGELOG* MIGRATION* LICENSES usage-rules.md),
       links: %{"GitHub" => @github_url}
     ]
   end
