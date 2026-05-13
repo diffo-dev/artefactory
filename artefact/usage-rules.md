@@ -5,6 +5,16 @@ SPDX-License-Identifier: MIT
 
 # Rules for working with Artefact
 
+## Installation
+
+The preferred way to add Artefact to a project is via Igniter:
+
+```bash
+mix igniter.install artefact
+```
+
+This wires up the formatter automatically. If your project does not use Igniter, add the dep manually and run `mix deps.get`.
+
 ## What Artefact is
 
 Artefact is an Elixir library for building, combining, and persisting knowledge graph fragments. An `%Artefact{}` is a named, typed property graph — a small, self-contained piece of knowledge. It is not an application data model, a database schema, or a general-purpose graph library.

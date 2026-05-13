@@ -5,6 +5,16 @@ SPDX-License-Identifier: MIT
 
 # Rules for working with ArtefactoryNeo4j
 
+## Installation
+
+The preferred way to add ArtefactoryNeo4j to a project is via Igniter:
+
+```bash
+mix igniter.install artefactory_neo4j
+```
+
+This automatically: configures Bolty connection details in `runtime.exs`, adds `Bolty` to the supervision tree, and installs the `artefact` dependency. If your project does not use Igniter, do these steps manually and run `mix deps.get`.
+
 ## What ArtefactoryNeo4j is
 
 ArtefactoryNeo4j persists `%Artefact{}` structs to a Neo4j-compatible graph database via the Bolt protocol (Bolty driver). It is a persistence boundary for knowledge graph fragments — not an ORM, not a data layer, not a query builder. You bring the artefact; it handles the Cypher.
