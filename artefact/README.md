@@ -20,10 +20,18 @@ As we yarn we naturally exchange and create Artefacts.
 
 ## Installation
 
+The preferred way to install Artefact is via Igniter:
+
+```bash
+mix igniter.install artefact
+```
+
+Or add the dependency manually:
+
 ```elixir
 def deps do
   [
-    {:artefact, "~> 0.1"}
+    {:artefact, "~> 0.2"}
   ]
 end
 ```
