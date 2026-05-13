@@ -5,7 +5,7 @@ defmodule Artefact.MixProject do
   @moduledoc false
   use Mix.Project
 
-  @version "0.2.0"
+  @version "0.3.0"
   @github_url "https://github.com/diffo-dev/artefactory"
 
   def project do

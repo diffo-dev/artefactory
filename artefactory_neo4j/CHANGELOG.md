@@ -1,4 +1,21 @@
+<!--
+SPDX-FileCopyrightText: 2026 artefactory contributors <https://github.com/diffo-dev/artefactory/graphs/contributors>
+SPDX-License-Identifier: MIT
+-->
+
 # Changelog
+
+## 0.3.0 — 2026-05-13
+
+### Tooling
+
+- Igniter task `mix artefactory_neo4j.install` — preferred installation method; configures Bolty in `runtime.exs`, adds `Bolty` to the supervision tree, and installs the `artefact` dependency automatically.
+- `usage-rules.md` — consumer-facing AI agent guidance, compatible with the `usage_rules` hex package ecosystem.
+- `usage_rules` dev dependency added.
+
+### Dependencies
+
+- Bumps `artefact` requirement to `~> 0.3.0`.
 
 ## 0.1.0 — 2026-04-21
 

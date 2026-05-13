@@ -31,7 +31,7 @@ Or add the dependency manually:
 ```elixir
 def deps do
   [
-    {:artefact, "~> 0.2"}
+    {:artefact, "~> 0.3"}
   ]
 end
 ```

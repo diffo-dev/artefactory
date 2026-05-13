@@ -30,7 +30,7 @@ Or add the dependency manually:
 ```elixir
 def deps do
   [
-    {:artefactory_neo4j, "~> 0.1"}
+    {:artefactory_neo4j, "~> 0.3"}
   ]
 end
 ```
