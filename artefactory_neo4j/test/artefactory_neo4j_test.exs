@@ -32,7 +32,7 @@ defmodule ArtefactoryNeo4jTest do
 
   test "write/3 — merges Me artefact into the database", %{conn: conn} do
     artefact =
-      Artefact.new(
+      Artefact.new!(
         title: "Me",
         base_label: "Me",
         nodes: [
@@ -46,7 +46,7 @@ defmodule ArtefactoryNeo4jTest do
 
   test "fetch/3 — retrieves a node written by write/3", %{conn: conn} do
     artefact =
-      Artefact.new(
+      Artefact.new!(
         title: "Fetch Test",
         base_label: "Me",
         nodes: [
@@ -65,7 +65,7 @@ defmodule ArtefactoryNeo4jTest do
 
   test "write/3 — merges UsTwo artefact with relationship", %{conn: conn} do
     artefact =
-      Artefact.new(
+      Artefact.new!(
         title: "UsTwo",
         base_label: "UsTwo",
         nodes: [
@@ -82,7 +82,7 @@ defmodule ArtefactoryNeo4jTest do
 
   test "write/3 — idempotent: merging twice does not duplicate nodes", %{conn: conn} do
     artefact =
-      Artefact.new(
+      Artefact.new!(
         title: "Idempotent",
         base_label: "Me",
         nodes: [

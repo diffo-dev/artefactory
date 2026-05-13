@@ -27,7 +27,7 @@ This monorepo contains two Elixir packages:
 The core library. An `%Artefact{}` is a small, self-contained property graph — nodes with labels and properties, connected by typed directed relationships. Build artefacts as Elixir structs, combine them with `compose` and `harmonise`, export to Cypher for Neo4j or Arrows JSON for visual editing.
 
 ```elixir
-{:artefact, "~> 0.1"}
+{:artefact, "~> 0.3"}
 ```
 
 ---
@@ -41,7 +41,7 @@ The core library. An `%Artefact{}` is a small, self-contained property graph —
 A Livebook Kino widget for viewing Artefacts. Three panels: interactive graph (heartside), tabbed Elixir inspector, and CREATE/MERGE/JSON export with click-to-copy.
 
 ```elixir
-{:artefact_kino, "~> 0.1"}
+{:artefact_kino, "~> 0.3"}
 ```
 
 ---
