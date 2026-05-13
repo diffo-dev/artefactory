@@ -2,7 +2,14 @@
 # SPDX-License-Identifier: MIT
 
 defmodule Artefact.UUID do
-  @moduledoc false
+  @moduledoc """
+  UUIDv7 generation and validation for Artefact node identity.
+
+  The key public function for consumers is `from_name/1` — derive a stable,
+  deterministic UUID from any string identifier. Use it when importing from
+  external sources (Mermaid, Cypher, JSON) to ensure the same node always
+  gets the same UUID across repeated imports.
+  """
   import Bitwise
 
   # 8-4-4-4-12 hex with hyphens, version digit "7" at offset 14, variant in
