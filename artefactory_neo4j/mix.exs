@@ -51,7 +51,11 @@ defmodule ArtefactoryNeo4j.MixProject do
       main: "ArtefactoryNeo4j",
       source_url: @github_url,
       source_ref: "v#{@version}",
-      extras: ["README.md", "CHANGELOG.md"]
+      extras: [
+        "README.md",
+        "CHANGELOG.md",
+        {"LICENSES/MIT.txt", title: "License (MIT)"}
+      ]
     ]
   end
 end
