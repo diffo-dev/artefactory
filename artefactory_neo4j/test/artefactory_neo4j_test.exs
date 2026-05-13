@@ -12,8 +12,8 @@ defmodule ArtefactoryNeo4jTest do
   @db "artefactory_neo4j_test"
   @db_neo4j "artefactory-neo4j-test"
 
-  @me_uuid "019da897-test-0001-0000-000000000001"
-  @you_uuid "019da897-test-0001-0000-000000000002"
+  @me_uuid "019da897-0000-7001-8001-000000000001"
+  @you_uuid "019da897-0000-7001-8001-000000000002"
 
   setup_all do
     {:ok, conn} = ArtefactoryNeo4j.connect(uri: @uri, auth: [username: @user, password: @pass])
